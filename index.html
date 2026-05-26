@@ -537,7 +537,7 @@
 
 <header class="app-header">
   <div class="app-title">重訓計時器</div>
-  <div class="app-sub">自訂課表 · 雙邊 / 單邊交替</div>
+  <div class="app-sub">勿滑手機，計時會中斷</div>
 </header>
 
 <!-- TAB BAR（手機顯示） -->
@@ -972,6 +972,62 @@ function fmtSec(s) {
 // ─── INIT ───────────────────────────────────────────────
 updateUI();
 updateBtns();
+
+ // ─── SCREEN WAKE LOCK (防手機休眠邏輯) ───────────────────
+let wakeLock = null;
+
+// 申請「鎖定螢幕」，不讓手機睡覺
+async function requestWakeLock() {
+  // 檢查使用者的手機瀏覽器有沒有支援這個功能
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      console.log('💪 螢幕防休眠已啟動！');
+    } catch (err) {
+      console.log('防休眠啟動失敗:', err.message);
+    }
+  }
+}
+
+// 釋放鎖定，讓手機恢復可以正常省電睡眠
+function releaseWakeLock() {
+  if (wakeLock !== null) {
+    wakeLock.release();
+    wakeLock = null;
+    console.log('💤 螢幕已恢復正常休眠機制');
+  }
+}
+
+// 🎯 智慧連動：只有在「計時器正在跑 (isRunning)」的時候才鎖定螢幕
+// 我們去修改原本的操控按鈕功能，讓它們自動觸發防休眠
+const originalHandleStart = handleStart;
+handleStart = function() {
+  originalHandleStart(); // 先執行原本的開始邏輯
+  if (isRunning) {
+    requestWakeLock();   // 只要計時器開始跑，就向手機申請「不准睡」
+  }
+};
+
+const originalHandleStop = handleStop;
+handleStop = function() {
+  originalHandleStop();  // 先執行原本的結算邏輯
+  releaseWakeLock();     // 訓練結束了，釋放螢幕，讓手機可以正常省電
+};
+
+const originalResetAll = resetAll;
+resetAll = function() {
+  originalResetAll();
+  releaseWakeLock();     // 重設課表時也釋放螢幕
+};
+
+// 防呆機制：如果使用者中途切換到別的 App (例如去回 LINE) 再切回來
+// 瀏覽器會自動中斷鎖定，所以切回來時如果計時器還在跑，要自動重新申請鎖定
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
+    await requestWakeLock();
+  }
+});
+ 
 </script>
 </body>
 </html>
