@@ -895,20 +895,20 @@ function updateUI() {
   pb.className = 'phase-badge';
 
   if (phase === 'WORK') {
-    document.body.style.background = 'linear-gradient(to top, #070f20, #0d1830)';
+    timerPanel.style.background = '#071c3a';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'work');
     pb.textContent = '訓練中'; pb.classList.add('work');
     fill.className = 'progress-bar-fill';
   } else if (phase === 'REST') {
-    document.body.style.background = 'linear-gradient(to top, #1a0e04, #0f0a00)';
+    timerPanel.style.background = '#1f1200';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'rest');
     pb.textContent = '休息中'; pb.classList.add('rest');
     fill.className = 'progress-bar-fill rest';
   } else if (phase === 'PAUSED') {
-    document.body.style.background = 'linear-gradient(to top, #0e0e16, #13131c)';
+    timerPanel.style.background = '#16161e';
     pb.textContent = '暫停中';
   } else {
-    document.body.style.background = '#0d0f14';
+    timerPanel.style.background = '#0d0f14';
     pb.textContent = '準備';
     bt.textContent = action ? fmtTime(action.work) : '01:00';
   }
