@@ -64,19 +64,19 @@
   .tab-bar {
     width: 100%;
     max-width: 800px;
-    padding: 14px 20px 0;
+    padding: 16px 22px 0;
     display: flex;
     gap: 0;
   }
 
   .tab-btn {
     flex: 1;
-    padding: 10px;
+    padding: 12px;
     background: var(--surface);
     border: 0.5px solid var(--border);
     color: var(--muted);
     font-family: 'Noto Sans TC', sans-serif;
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
     transition: all 0.2s;
   }
@@ -120,7 +120,7 @@
     background: rgba(61,139,255,0.08);
     color: var(--work);
     font-family: 'Noto Sans TC', sans-serif;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.15s;
@@ -142,7 +142,7 @@
     padding: 14px 18px;
     border-bottom: 0.5px solid var(--border);
     font-family: 'Barlow Condensed', sans-serif;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -895,16 +895,20 @@ function updateUI() {
   pb.className = 'phase-badge';
 
   if (phase === 'WORK') {
+    document.body.style.background = 'linear-gradient(to top, #070f20, #0d1830)';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'work');
     pb.textContent = '訓練中'; pb.classList.add('work');
     fill.className = 'progress-bar-fill';
   } else if (phase === 'REST') {
+    document.body.style.background = 'linear-gradient(to top, #1a0e04, #0f0a00)';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'rest');
     pb.textContent = '休息中'; pb.classList.add('rest');
     fill.className = 'progress-bar-fill rest';
   } else if (phase === 'PAUSED') {
+    document.body.style.background = 'linear-gradient(to top, #0e0e16, #13131c)';
     pb.textContent = '暫停中';
   } else {
+    document.body.style.background = '#0d0f14';
     pb.textContent = '準備';
     bt.textContent = action ? fmtTime(action.work) : '01:00';
   }
