@@ -542,6 +542,10 @@ let wallclockStart  = null;   // 按下開始的 timestamp
 let wallclockEnd    = null;   // 訓練結束的 timestamp
 let wallclockTimer  = null;   // 每秒更新顯示用
 
+// 背景計時器：當頁面隱藏時繼續計時
+let lastSyncTime = null;      // 最後同步時間戳
+let backgroundSyncInterval = null; // 背景同步計時器
+
 // ─── AUDIO ──────────────────────────────────────────────
 let audioCtx = null;
 function getAudio() {
@@ -620,6 +624,7 @@ function startPhase(p) {
   else if (p === 'REST')  { phaseTotal = action.rest; }
   else if (p === 'TRANSITION') { phaseTotal = TRANSITION_SEC; }
   remaining = phaseTotal;
+  lastSyncTime = Date.now(); // 記錄本次同步時間
   updateUI();
   clearInterval(timerId);
   timerId = setInterval(tick, 1000);
@@ -699,6 +704,7 @@ function finishAll() {
   isRunning = false;
   wallclockEnd = Date.now();
   clearInterval(wallclockTimer);
+  clearBackgroundSync();
   updateWallclock();
   showSummary(true);
 }
@@ -712,6 +718,43 @@ function updateWallclock() {
   el.textContent = fmtTime(diff);
 }
 
+// ─── 背景計時同步（頁面隱藏時繼續計時）──────────────────
+function startBackgroundSync() {
+  clearBackgroundSync(); // 清理舊的
+  lastSyncTime = Date.now();
+  backgroundSyncInterval = setInterval(() => {
+    if (!isRunning || isPaused) return;
+    
+    const now = Date.now();
+    const deltaMs = now - lastSyncTime;
+    const deltaSec = Math.floor(deltaMs / 1000);
+    
+    if (deltaSec > 0) {
+      // 補償時間流逝
+      remaining -= deltaSec;
+      if (phase === 'WORK') totalActive += deltaSec;
+      lastSyncTime = now;
+      
+      // 如果倒計時已過期，觸發 onPhaseEnd
+      if (remaining <= 0) {
+        remaining = 0;
+        clearInterval(backgroundSyncInterval);
+        backgroundSyncInterval = null;
+        onPhaseEnd();
+      } else {
+        updateUI();
+      }
+    }
+  }, 500); // 每 500ms 檢查一次
+}
+
+function clearBackgroundSync() {
+  if (backgroundSyncInterval) {
+    clearInterval(backgroundSyncInterval);
+    backgroundSyncInterval = null;
+  }
+}
+
 // ─── CONTROLS ───────────────────────────────────────────
 function handleStart() {
   if (!routine.length) { alert('請先在課表安排頁加入訓練動作'); return; }
@@ -720,10 +763,13 @@ function handleStart() {
   if (isPaused) {
     isPaused = false; isRunning = true;
     timerId = setInterval(tick, 1000);
-    // 壁鐘繼續跑（時間已經包含暫停中的等待，這是預期行為）
+    lastSyncTime = Date.now();
+    startBackgroundSync();
+    updateWallclock();
     if (!wallclockTimer) {
       wallclockTimer = setInterval(updateWallclock, 1000);
     }
+    requestWakeLock();
     updateBtns();
     return;
   }
@@ -739,6 +785,8 @@ function handleStart() {
     wallclockEnd   = null;
     wallclockTimer = setInterval(updateWallclock, 1000);
     startPhase('WORK');
+    startBackgroundSync();
+    requestWakeLock();
     updateBtns();
     renderList();
   }
@@ -748,8 +796,7 @@ function handlePause() {
   if (!isRunning) return;
   isPaused = true; isRunning = false;
   clearInterval(timerId); timerId = null;
-  // 壁鐘計時器停止（暫停期間不計入壁鐘）
-  // 注意：這裡選擇「暫停時壁鐘也停」，若想讓壁鐘包含暫停時間，把下面這行刪掉即可
+  clearBackgroundSync();
   clearInterval(wallclockTimer); wallclockTimer = null;
   phase = 'PAUSED';
   updateUI(); updateBtns();
@@ -758,22 +805,26 @@ function handlePause() {
 function handleEarly() {
   if (!isRunning) return;
   clearInterval(timerId); timerId = null;
+  clearBackgroundSync();
   remaining = 0;
   onPhaseEnd();
 }
 
 function handleStop() {
   clearInterval(timerId); timerId = null;
+  clearBackgroundSync();
   clearInterval(wallclockTimer); wallclockTimer = null;
   isRunning = false; isPaused = false;
   phase = 'IDLE';
   wallclockEnd = Date.now();
   updateWallclock();
+  releaseWakeLock();
   showSummary(false);
 }
 
 function resetAll() {
   clearInterval(timerId); timerId = null;
+  clearBackgroundSync();
   clearInterval(wallclockTimer); wallclockTimer = null;
   isRunning = false; isPaused = false; phase = 'IDLE';
   actionIdx = 0; setIdx = 0; remaining = 0; phaseTotal = 0;
@@ -781,12 +832,14 @@ function resetAll() {
   completedSets = 0; completedActions = 0;
   sessionLog = []; currentSide = 'L';
   wallclockStart = null; wallclockEnd = null;
+  lastSyncTime = null;
+  releaseWakeLock();
   document.getElementById('summary').classList.remove('show');
   updateUI(); updateBtns(); updateWallclock(); renderList();
   document.getElementById('elapsed-display').textContent = '00:00';
 }
 
-// ─── UI ─────────────────────────────────────────────────
+// ─── UI ──────────────────────���──────────────────────────
 function updateUI() {
   const bt        = document.getElementById('big-time');
   const pb        = document.getElementById('phase-badge');
@@ -935,39 +988,34 @@ async function requestWakeLock() {
 // 釋放鎖定，讓手機恢復可以正常省電睡眠
 function releaseWakeLock() {
   if (wakeLock !== null) {
-    wakeLock.release();
-    wakeLock = null;
-    console.log('💤 螢幕已恢復正常休眠機制');
+    try {
+      wakeLock.release().then(() => {
+        wakeLock = null;
+        console.log('💤 螢幕已恢復正常休眠機制');
+      });
+    } catch (err) {
+      console.log('釋放防休眠失敗:', err.message);
+    }
   }
 }
 
-// 🎯 智慧連動：只有在「計時器正在跑 (isRunning)」的時候才鎖定螢幕
-// 我們去修改原本的操控按鈕功能，讓它們自動觸發防休眠
-const originalHandleStart = handleStart;
-handleStart = function() {
-  originalHandleStart(); // 先執行原本的開始邏輯
-  if (isRunning) {
-    requestWakeLock();   // 只要計時器開始跑，就向手機申請「不准睡」
-  }
-};
-
-const originalHandleStop = handleStop;
-handleStop = function() {
-  originalHandleStop();  // 先執行原本的結算邏輯
-  releaseWakeLock();     // 訓練結束了，釋放螢幕，讓手機可以正常省電
-};
-
-const originalResetAll = resetAll;
-resetAll = function() {
-  originalResetAll();
-  releaseWakeLock();     // 重設課表時也釋放螢幕
-};
-
-// 防呆機制：如果使用者中途切換到別的 App (例如去回 LINE) 再切回來
-// 瀏覽器會自動中斷鎖定，所以切回來時如果計時器還在跑，要自動重新申請鎖定
+// 處理頁面可見性變化
 document.addEventListener('visibilitychange', async () => {
-  if (wakeLock !== null && document.visibilityState === 'visible' && isRunning) {
-    await requestWakeLock();
+  const isVisible = !document.hidden;
+  
+  if (isVisible) {
+    // 頁面回到前景
+    console.log('📱 頁面回到前景');
+    if (isRunning && !isPaused) {
+      // 計時器正在運行：重新請求鎖定並同步時間
+      await requestWakeLock();
+      // 立即同步一次，確保顯示正確
+      lastSyncTime = Date.now();
+      startBackgroundSync();
+    }
+  } else {
+    // 頁面進入背景，保持背景同步運行以支持時間補償
+    console.log('📳 頁面進入背景');
   }
 });
  
