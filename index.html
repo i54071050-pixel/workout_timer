@@ -15,15 +15,15 @@
 
   :root {
     --bg: #0d0f14;
-    --surface: #1c2030;      /* 加深，比原本 #161921 更明顯 */
-    --surface2: #252a3a;     /* 加深，比原本 #1e222e 更明顯 */
+    --surface: #1c2030;
+    --surface2: #252a3a;
     --border: rgba(255,255,255,0.09);
     --border2: rgba(255,255,255,0.18);
     --text: #e8eaf0;
     --muted: #6b7080;
     --work: #3d8bff;
     --rest: #ff6b35;
-    --trans: #22c55e;        /* 換動作緩衝：綠色 */
+    --trans: #22c55e;
     --accent: #a78bfa;
     --danger: #f87171;
     --success: #4ade80;
@@ -41,7 +41,6 @@
     transition: background 0.8s ease;
   }
 
-  /* ─── HEADER ─── */
   .app-header {
     width: 100%;
     max-width: 800px;
@@ -58,7 +57,6 @@
   }
   .app-sub { font-size: 13px; color: var(--muted); letter-spacing: 0.5px; }
 
-  /* ─── TAB BAR ─── */
   .tab-bar {
     width: 100%; max-width: 800px;
     padding: 14px 20px 0;
@@ -76,7 +74,6 @@
   .tab-btn:last-child  { border-radius: 0 10px 10px 0; }
   .tab-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
 
-  /* ─── LAYOUT ─── */
   .layout {
     width: 100%; max-width: 800px;
     padding: 16px 20px 40px;
@@ -92,7 +89,6 @@
     .go-btn { display: none !important; }
   }
 
-  /* ─── 跳轉按鈕 ─── */
   .go-btn {
     width: 100%; padding: 14px; border-radius: 12px;
     border: 0.5px solid rgba(61,139,255,0.35);
@@ -105,7 +101,6 @@
   .go-btn:hover  { background: rgba(61,139,255,0.14); }
   .go-btn:active { transform: scale(0.98); }
 
-  /* ─── ROUTINE PANEL ─── */
   .panel {
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -180,7 +175,6 @@
     color: var(--muted); font-size: 13px; line-height: 1.7;
   }
 
-  /* ─── TIMER PANEL ─── */
   .timer-panel {
     background: var(--surface);
     border: 0.5px solid var(--border);
@@ -213,7 +207,6 @@
   .prog-dot.done   { background: var(--success); }
   .prog-dot.active { background: var(--work); }
 
-  /* ─── CLOCK ─── */
   .clock-area {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -271,7 +264,6 @@
     min-height: 26px;
   }
 
-  /* ─── WALLCLOCK ROW（真實時鐘時間）─── */
   .wallclock-bar {
     padding: 6px 18px 0;
     display: flex; justify-content: space-between; align-items: center;
@@ -282,7 +274,6 @@
     font-size: 14px; color: var(--muted); letter-spacing: 1px;
   }
 
-  /* ─── ELAPSED ─── */
   .elapsed-bar {
     padding: 4px 18px 0;
     display: flex; justify-content: space-between; align-items: center;
@@ -293,7 +284,6 @@
     font-size: 14px; color: var(--muted); letter-spacing: 1px;
   }
 
-  /* ─── PROGRESS BAR ─── */
   .progress-bar-wrap { padding: 0 18px; margin-bottom: 4px; }
   .progress-bar-bg {
     height: 3px; background: var(--border2);
@@ -307,7 +297,6 @@
   .progress-bar-fill.rest  { background: var(--rest); }
   .progress-bar-fill.trans { background: var(--trans); }
 
-  /* ─── CONTROLS ─── */
   .controls {
     padding: 12px 14px 14px;
     display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -332,7 +321,6 @@
   .ctrl-btn.danger { border-color: rgba(248,113,113,0.4); color: var(--danger); }
   .ctrl-btn.danger:hover { background: rgba(248,113,113,0.12); }
 
-  /* ─── SUMMARY OVERLAY ─── */
   .summary-overlay {
     display: none; position: absolute; inset: 0;
     background: var(--surface); border-radius: 16px;
@@ -380,6 +368,15 @@
 </head>
 <body>
 
+<!-- 
+  Hidden video element: A Safari/iPhone trick to prevent screen sleep.
+  Safari won't honour the Wake Lock API, but it WILL stay awake if a
+  video element is actively "playing" (even a 1-pixel silent video loop).
+  We create a tiny silent video in memory and play it whenever the timer runs.
+-->
+<video id="wake-video" style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;" 
+       playsinline muted loop></video>
+
 <header class="app-header">
   <div class="app-title">Gym Timer</div>
   <div class="app-sub">自訂課表 · by C.Y.L.</div>
@@ -392,7 +389,6 @@
 
 <div class="layout">
 
-  <!-- PAGE 1: ROUTINE BUILDER -->
   <div id="page-routine" class="tab-page active">
     <div class="panel">
       <div class="panel-head">
@@ -411,11 +407,9 @@
     <button class="go-btn" onclick="goToTimer()">前往計時器 →</button>
   </div>
 
-  <!-- PAGE 2: TIMER -->
   <div id="page-timer" class="tab-page">
     <div class="timer-panel" id="timer-panel">
 
-      <!-- SUMMARY OVERLAY -->
       <div class="summary-overlay" id="summary">
         <div class="summary-title" id="summary-title">訓練結算</div>
         <div class="summary-grid">
@@ -440,7 +434,6 @@
         <button class="restart-btn" onclick="resetAll()">重新開始</button>
       </div>
 
-      <!-- CURRENT ACTION INFO -->
       <div class="timer-info">
         <div>
           <div class="current-label">目前動作</div>
@@ -449,19 +442,16 @@
         <div class="progress-dots" id="progress-dots"></div>
       </div>
 
-      <!-- 真實時鐘時間（開始→現在）-->
       <div class="wallclock-bar">
         <span class="wallclock-lbl">總訓練時長</span>
         <span class="wallclock-val" id="wallclock-display">—</span>
       </div>
 
-      <!-- 訓練中累計秒數 -->
       <div class="elapsed-bar">
         <span class="elapsed-lbl">實際訓練秒</span>
         <span class="elapsed-val" id="elapsed-display">00:00</span>
       </div>
 
-      <!-- CLOCK -->
       <div class="clock-area">
         <div class="phase-badge" id="phase-badge">準備</div>
         <div class="big-time" id="big-time">01:30</div>
@@ -470,14 +460,12 @@
         <div class="sets-text" id="sets-text">—</div>
       </div>
 
-      <!-- PROGRESS BAR -->
       <div class="progress-bar-wrap">
         <div class="progress-bar-bg">
           <div class="progress-bar-fill" id="prog-fill"></div>
         </div>
       </div>
 
-      <!-- CONTROLS -->
       <div class="controls">
         <button class="ctrl-btn start" id="btn-start" onclick="handleStart()">
           <span class="icon">▶</span><span>開始</span>
@@ -512,7 +500,6 @@ function goToTimer() {
 }
 
 // ─── DATA ───────────────────────────────────────────────
-// work 改為 90s；單邊 8 組（左右交替）；動作間緩衝 120s
 const TRANSITION_SEC = 120;
 
 const MODES = {
@@ -521,30 +508,31 @@ const MODES = {
   bilateral:  { label:'雙邊訓練', work:90,  rest:45, sets:4, fixedSets:false }
 };
 
-let routine       = [];
-let actionIdx     = 0;
-let setIdx        = 0;
-// phase: 'IDLE' | 'WORK' | 'REST' | 'TRANSITION' | 'PAUSED'
-let phase         = 'IDLE';
-let remaining     = 0;
-let phaseTotal    = 0;
-let timerId       = null;
-let totalActive   = 0;   // 只累計 WORK 秒數
+let routine          = [];
+let actionIdx        = 0;
+let setIdx           = 0;
+let phase            = 'IDLE';  // 'IDLE'|'WORK'|'REST'|'TRANSITION'|'PAUSED'
+let timerId          = null;
+let totalActive      = 0;       // accumulated WORK seconds
 let completedSets    = 0;
 let completedActions = 0;
-let currentSide   = 'L';
-let sessionLog    = [];
-let isRunning     = false;
-let isPaused      = false;
+let currentSide      = 'L';
+let sessionLog       = [];
+let isRunning        = false;
+let isPaused         = false;
 
-// 真實時鐘：用 Date.now() 記錄，暫停不影響
-let wallclockStart  = null;   // 按下開始的 timestamp
-let wallclockEnd    = null;   // 訓練結束的 timestamp
-let wallclockTimer  = null;   // 每秒更新顯示用
+// ─── WALL-CLOCK (total elapsed since start button) ──────
+let wallclockStart   = null;
+let wallclockEnd     = null;
+let wallclockTimer   = null;
 
-// 背景計時器：當頁面隱藏時繼續計時
-let lastSyncTime = null;      // 最後同步時間戳
-let backgroundSyncInterval = null; // 背景同步計時器
+// ─── PHASE TIMESTAMPS (the key fix for double-speed bug) ─
+// Instead of decrementing a counter every second, we store
+// the exact real-world time when this phase should END.
+// Then every tick recomputes remaining = phaseEndTime - now.
+// Even if the phone sleeps for 30 s, next tick is accurate.
+let phaseEndTime  = null;   // Date.now() ms when current phase expires
+let phaseTotal    = 0;      // total seconds of this phase (for progress bar)
 
 // ─── AUDIO ──────────────────────────────────────────────
 let audioCtx = null;
@@ -571,6 +559,301 @@ function playTimeUp() {
 }
 function playFinish() {
   [523, 659, 784].forEach((f, i) => setTimeout(() => playTone(f, 300, 'sine', 0.13), i * 180));
+}
+
+// ─── SCREEN WAKE (iPhone-compatible) ────────────────────
+// Safari doesn't support the Wake Lock API.
+// But Safari DOES keep the screen on while a <video> element
+// is playing — even a completely silent, invisible video.
+// We create a tiny video blob and play it while the timer runs.
+let wakeLock = null;
+
+function buildWakeVideo() {
+  // Create a minimal 1×1 transparent video in memory using a data URL.
+  // This is a real MP4 fragment (smallest possible valid video).
+  const video = document.getElementById('wake-video');
+  // Use a 1-second silent loop created via Canvas + MediaRecorder
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1; canvas.height = 1;
+    const stream = canvas.captureStream(1);
+    const mr = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' });
+    const chunks = [];
+    mr.ondataavailable = e => chunks.push(e.data);
+    mr.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      video.src = URL.createObjectURL(blob);
+    };
+    mr.start(); setTimeout(() => mr.stop(), 500);
+  } catch(e) {
+    // MediaRecorder not available (older Safari) — fallback silently
+    console.log('Wake video creation skipped:', e.message);
+  }
+}
+buildWakeVideo();
+
+async function requestWakeLock() {
+  const video = document.getElementById('wake-video');
+  // Method 1: Standard Wake Lock API (Chrome/Android)
+  if ('wakeLock' in navigator) {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+    } catch(e) { /* fall through to video method */ }
+  }
+  // Method 2: Hidden video loop (Safari/iPhone)
+  // play() returns a promise; ignore rejection if video isn't ready yet
+  if (video.src) {
+    video.play().catch(() => {});
+  }
+}
+
+function releaseWakeLock() {
+  const video = document.getElementById('wake-video');
+  video.pause();
+  if (wakeLock) {
+    wakeLock.release().catch(() => {});
+    wakeLock = null;
+  }
+}
+
+// Re-acquire wake lock when tab comes back to foreground
+// (browsers release it automatically on visibility change)
+document.addEventListener('visibilitychange', async () => {
+  if (!document.hidden && isRunning && !isPaused) {
+    await requestWakeLock();
+    // Also resync the timer in case phone was asleep
+    rescheduleAfterWake();
+  }
+});
+
+// ─── TIMER CORE ──────────────────────────────────────────
+// KEY CHANGE: startPhase stores an absolute end-time (phaseEndTime)
+// instead of a simple counter. tick() reads real clock to compute
+// remaining — so sleeping phones catch up instantly on wake.
+
+function clearTimer() {
+  if (timerId !== null) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+}
+
+function startPhase(p) {
+  const action = routine[actionIdx];
+  phase = p;
+
+  let durationSec;
+  if (p === 'WORK')       durationSec = action.work;
+  else if (p === 'REST')  durationSec = action.rest;
+  else if (p === 'TRANSITION') durationSec = TRANSITION_SEC;
+
+  phaseTotal   = durationSec;
+  phaseEndTime = Date.now() + durationSec * 1000;  // <-- store REAL clock end time
+
+  updateUI();
+  clearTimer();
+  timerId = setInterval(tick, 500);  // check every 500ms so we catch the exact second
+}
+
+function tick() {
+  if (!isRunning || isPaused) return;
+
+  const now = Date.now();
+  const remaining = Math.max(0, Math.ceil((phaseEndTime - now) / 1000));
+
+  // Accumulate WORK seconds: compare against previous reading
+  // (we track via phaseEndTime so this is always accurate even after wake)
+  // totalActive is updated once per second based on actual remaining change
+  if (phase === 'WORK') {
+    // Calculate how many whole seconds of WORK have elapsed this phase
+    const workElapsed = phaseTotal - remaining;
+    // Update totalActive to reflect current elapsed work
+    // We store the base so we only add newly elapsed time
+    totalActive = totalActiveBase + workElapsed;
+  }
+
+  // Beep in last 3 seconds of rest or transition
+  if ((phase === 'REST' || phase === 'TRANSITION') && remaining <= 3 && remaining > 0) {
+    // Only beep once per second by checking if we just crossed a second boundary
+    const prevRemaining = Math.ceil((phaseEndTime - (now - 500)) / 1000);
+    if (prevRemaining !== remaining) playBeep();
+  }
+
+  updateUI_remaining(remaining);
+
+  if (remaining <= 0 && now >= phaseEndTime) {
+    clearTimer();
+    onPhaseEnd();
+  }
+}
+
+// totalActiveBase: work seconds accumulated BEFORE the current phase started
+let totalActiveBase = 0;
+
+function onPhaseEnd() {
+  const action = routine[actionIdx];
+
+  if (phase === 'WORK') {
+    // Finalize totalActive for this work phase
+    totalActive = totalActiveBase + phaseTotal;
+    totalActiveBase = totalActive;
+    playTimeUp();
+    startPhase('REST');
+    return;
+  }
+
+  if (phase === 'REST') {
+    completedSets++;
+    setIdx++;
+
+    if (setIdx < action.sets) {
+      if (action.type === 'unilateral') currentSide = currentSide === 'L' ? 'R' : 'L';
+      playTimeUp();
+      startPhase('WORK');
+      return;
+    }
+
+    completedActions++;
+    sessionLog.push(`✓ ${action.label} — ${action.sets}組完成`);
+    actionIdx++;
+    setIdx = 0;
+    currentSide = 'L';
+    renderList();
+
+    if (actionIdx < routine.length) {
+      playTimeUp();
+      startPhase('TRANSITION');
+    } else {
+      finishAll();
+    }
+    return;
+  }
+
+  if (phase === 'TRANSITION') {
+    playTimeUp();
+    startPhase('WORK');
+    return;
+  }
+}
+
+function finishAll() {
+  playFinish();
+  phase = 'IDLE';
+  isRunning = false;
+  wallclockEnd = Date.now();
+  clearInterval(wallclockTimer); wallclockTimer = null;
+  releaseWakeLock();
+  updateWallclock();
+  showSummary(true);
+}
+
+// Called when the tab becomes visible again after being hidden.
+// If the timer should have ended while the phone was asleep,
+// we fire onPhaseEnd immediately. Otherwise the next tick() handles it.
+function rescheduleAfterWake() {
+  if (phaseEndTime && Date.now() >= phaseEndTime) {
+    clearTimer();
+    onPhaseEnd();
+  }
+}
+
+// ─── WALL-CLOCK ─────────────────────────────────────────
+function updateWallclock() {
+  const el = document.getElementById('wallclock-display');
+  if (!wallclockStart) { el.textContent = '—'; return; }
+  const end = wallclockEnd || Date.now();
+  el.textContent = fmtTime(Math.floor((end - wallclockStart) / 1000));
+}
+
+// ─── CONTROLS ───────────────────────────────────────────
+function handleStart() {
+  if (!routine.length) { alert('請先在課表安排頁加入訓練動作'); return; }
+  getAudio(); // unlock audio context on first user gesture
+
+  if (isPaused) {
+    // ── RESUME ──
+    // Shift phaseEndTime forward by however long we were paused
+    const pausedMs = Date.now() - pausedAt;
+    phaseEndTime += pausedMs;
+    isPaused = false;
+    isRunning = true;
+    timerId = setInterval(tick, 500);
+    if (!wallclockTimer) wallclockTimer = setInterval(updateWallclock, 1000);
+    requestWakeLock();
+    updateBtns();
+    return;
+  }
+
+  if (!isRunning) {
+    isRunning = true;
+    actionIdx = 0; setIdx = 0; currentSide = 'L';
+    completedSets = 0; completedActions = 0;
+    totalActive = 0; totalActiveBase = 0;
+    sessionLog = [];
+    wallclockStart = Date.now();
+    wallclockEnd = null;
+    wallclockTimer = setInterval(updateWallclock, 1000);
+    startPhase('WORK');
+    requestWakeLock();
+    updateBtns();
+    renderList();
+  }
+}
+
+let pausedAt = null; // timestamp of when we paused
+
+function handlePause() {
+  if (!isRunning) return;
+  pausedAt = Date.now();
+  // Snapshot totalActive correctly at pause time
+  if (phase === 'WORK') {
+    const remaining = Math.max(0, Math.ceil((phaseEndTime - pausedAt) / 1000));
+    totalActive = totalActiveBase + (phaseTotal - remaining);
+    totalActiveBase = totalActive;
+    // Adjust phaseEndTime so remaining is preserved
+    // (we'll re-extend it on resume, see handleStart)
+  }
+  isPaused = true;
+  isRunning = false;
+  clearTimer();
+  clearInterval(wallclockTimer); wallclockTimer = null;
+  releaseWakeLock();
+  phase = 'PAUSED';
+  updateUI();
+  updateBtns();
+}
+
+function handleEarly() {
+  if (!isRunning) return;
+  clearTimer();
+  phaseEndTime = Date.now(); // force expiry now
+  onPhaseEnd();
+}
+
+function handleStop() {
+  clearTimer();
+  clearInterval(wallclockTimer); wallclockTimer = null;
+  isRunning = false; isPaused = false;
+  phase = 'IDLE';
+  wallclockEnd = Date.now();
+  releaseWakeLock();
+  updateWallclock();
+  showSummary(false);
+}
+
+function resetAll() {
+  clearTimer();
+  clearInterval(wallclockTimer); wallclockTimer = null;
+  isRunning = false; isPaused = false; phase = 'IDLE';
+  actionIdx = 0; setIdx = 0; phaseEndTime = null; phaseTotal = 0;
+  totalActive = 0; totalActiveBase = 0;
+  completedSets = 0; completedActions = 0;
+  sessionLog = []; currentSide = 'L';
+  wallclockStart = null; wallclockEnd = null; pausedAt = null;
+  releaseWakeLock();
+  document.getElementById('summary').classList.remove('show');
+  updateUI(); updateBtns(); updateWallclock(); renderList();
+  document.getElementById('elapsed-display').textContent = '00:00';
 }
 
 // ─── ROUTINE BUILDER ────────────────────────────────────
@@ -613,233 +896,33 @@ function renderProgressDots() {
   }).join('');
 }
 
-// ─── TIMER CORE ─────────────────────────────────────────
-function getCurrentAction() { return routine[actionIdx]; }
+// ─── UI UPDATE ───────────────────────────────────────────
+// Split into two: updateUI (full redraw) and updateUI_remaining (fast path from tick)
+let lastDisplayedRemaining = -1;
 
-// 統一啟動任一 phase
-function startPhase(p) {
-  const action = getCurrentAction();
-  phase = p;
-  if (p === 'WORK')       { phaseTotal = action.work; }
-  else if (p === 'REST')  { phaseTotal = action.rest; }
-  else if (p === 'TRANSITION') { phaseTotal = TRANSITION_SEC; }
-  remaining = phaseTotal;
-  lastSyncTime = Date.now(); // 記錄本次同步時間
-  updateUI();
-  clearInterval(timerId);
-  timerId = setInterval(tick, 1000);
-}
+function updateUI_remaining(remaining) {
+  if (remaining === lastDisplayedRemaining) return; // no change, skip DOM write
+  lastDisplayedRemaining = remaining;
 
-function tick() {
-  remaining--;
-  // 只有 WORK 階段累計實際訓練秒
-  if (phase === 'WORK') totalActive++;
-  updateUI();
+  const bt   = document.getElementById('big-time');
+  const fill = document.getElementById('prog-fill');
 
-  // 最後 3 秒的提示音（REST 和 TRANSITION 都給）
-  if ((phase === 'REST' || phase === 'TRANSITION') && remaining <= 3 && remaining > 0) {
-    playBeep();
-  }
-
-  if (remaining <= 0) {
-    clearInterval(timerId);
-    timerId = null;
-    onPhaseEnd();
-  }
-}
-
-function onPhaseEnd() {
-  const action = getCurrentAction();
-
-  // ── WORK 結束 → 進入 REST ──
+  bt.textContent = fmtTime(remaining);
+  bt.className   = 'big-time';
   if (phase === 'WORK') {
-    playTimeUp();
-    startPhase('REST');
-    return;
+    bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'work');
+  } else if (phase === 'REST') {
+    bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'rest');
+  } else if (phase === 'TRANSITION') {
+    bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'trans');
   }
 
-  // ── REST 結束 → 判斷是否還有下一組 ──
-  if (phase === 'REST') {
-    completedSets++;
-    setIdx++;
+  const pct = phaseTotal > 0 ? Math.round((1 - remaining / phaseTotal) * 100) : 0;
+  fill.style.width = pct + '%';
 
-    if (setIdx < action.sets) {
-      // 同一動作還有下一組：直接開始訓練
-      if (action.type === 'unilateral') currentSide = currentSide === 'L' ? 'R' : 'L';
-      playTimeUp();
-      startPhase('WORK');
-      return;
-    }
-
-    // 此動作全部組數完成
-    completedActions++;
-    sessionLog.push(`✓ ${action.label} — ${action.sets}組完成`);
-    actionIdx++;
-    setIdx = 0;
-    currentSide = 'L';
-    renderList();
-
-    if (actionIdx < routine.length) {
-      // 還有下一個動作 → 進入換動作緩衝
-      playTimeUp();
-      startPhase('TRANSITION');
-    } else {
-      // 全部課表完成
-      finishAll();
-    }
-    return;
-  }
-
-  // ── TRANSITION 結束 → 開始下一個動作 ──
-  if (phase === 'TRANSITION') {
-    playTimeUp();
-    startPhase('WORK');
-    return;
-  }
+  document.getElementById('elapsed-display').textContent = fmtTime(totalActive);
 }
 
-function finishAll() {
-  playFinish();
-  phase = 'IDLE';
-  isRunning = false;
-  wallclockEnd = Date.now();
-  clearInterval(wallclockTimer);
-  clearBackgroundSync();
-  updateWallclock();
-  showSummary(true);
-}
-
-// ─── 真實時鐘更新 ───────────────────────────────────────
-function updateWallclock() {
-  const el = document.getElementById('wallclock-display');
-  if (!wallclockStart) { el.textContent = '—'; return; }
-  const end = wallclockEnd || Date.now();
-  const diff = Math.floor((end - wallclockStart) / 1000);
-  el.textContent = fmtTime(diff);
-}
-
-// ─── 背景計時同步（頁面隱藏時繼續計時）──────────────────
-function startBackgroundSync() {
-  clearBackgroundSync(); // 清理舊的
-  lastSyncTime = Date.now();
-  backgroundSyncInterval = setInterval(() => {
-    if (!isRunning || isPaused) return;
-    
-    const now = Date.now();
-    const deltaMs = now - lastSyncTime;
-    const deltaSec = Math.floor(deltaMs / 1000);
-    
-    if (deltaSec > 0) {
-      // 補償時間流逝
-      remaining -= deltaSec;
-      if (phase === 'WORK') totalActive += deltaSec;
-      lastSyncTime = now;
-      
-      // 如果倒計時已過期，觸發 onPhaseEnd
-      if (remaining <= 0) {
-        remaining = 0;
-        clearInterval(backgroundSyncInterval);
-        backgroundSyncInterval = null;
-        onPhaseEnd();
-      } else {
-        updateUI();
-      }
-    }
-  }, 500); // 每 500ms 檢查一次
-}
-
-function clearBackgroundSync() {
-  if (backgroundSyncInterval) {
-    clearInterval(backgroundSyncInterval);
-    backgroundSyncInterval = null;
-  }
-}
-
-// ─── CONTROLS ───────────────────────────────────────────
-function handleStart() {
-  if (!routine.length) { alert('請先在課表安排頁加入訓練動作'); return; }
-  getAudio();
-
-  if (isPaused) {
-    isPaused = false; isRunning = true;
-    timerId = setInterval(tick, 1000);
-    lastSyncTime = Date.now();
-    startBackgroundSync();
-    updateWallclock();
-    if (!wallclockTimer) {
-      wallclockTimer = setInterval(updateWallclock, 1000);
-    }
-    requestWakeLock();
-    updateBtns();
-    return;
-  }
-
-  if (!isRunning) {
-    isRunning = true;
-    actionIdx = 0; setIdx = 0; currentSide = 'L';
-    completedSets = 0; completedActions = 0;
-    totalActive = 0;
-    sessionLog = [];
-    // 記錄真實開始時間
-    wallclockStart = Date.now();
-    wallclockEnd   = null;
-    wallclockTimer = setInterval(updateWallclock, 1000);
-    startPhase('WORK');
-    startBackgroundSync();
-    requestWakeLock();
-    updateBtns();
-    renderList();
-  }
-}
-
-function handlePause() {
-  if (!isRunning) return;
-  isPaused = true; isRunning = false;
-  clearInterval(timerId); timerId = null;
-  clearBackgroundSync();
-  clearInterval(wallclockTimer); wallclockTimer = null;
-  phase = 'PAUSED';
-  updateUI(); updateBtns();
-}
-
-function handleEarly() {
-  if (!isRunning) return;
-  clearInterval(timerId); timerId = null;
-  clearBackgroundSync();
-  remaining = 0;
-  onPhaseEnd();
-}
-
-function handleStop() {
-  clearInterval(timerId); timerId = null;
-  clearBackgroundSync();
-  clearInterval(wallclockTimer); wallclockTimer = null;
-  isRunning = false; isPaused = false;
-  phase = 'IDLE';
-  wallclockEnd = Date.now();
-  updateWallclock();
-  releaseWakeLock();
-  showSummary(false);
-}
-
-function resetAll() {
-  clearInterval(timerId); timerId = null;
-  clearBackgroundSync();
-  clearInterval(wallclockTimer); wallclockTimer = null;
-  isRunning = false; isPaused = false; phase = 'IDLE';
-  actionIdx = 0; setIdx = 0; remaining = 0; phaseTotal = 0;
-  totalActive = 0;
-  completedSets = 0; completedActions = 0;
-  sessionLog = []; currentSide = 'L';
-  wallclockStart = null; wallclockEnd = null;
-  lastSyncTime = null;
-  releaseWakeLock();
-  document.getElementById('summary').classList.remove('show');
-  updateUI(); updateBtns(); updateWallclock(); renderList();
-  document.getElementById('elapsed-display').textContent = '00:00';
-}
-
-// ─── UI ──────────────────────���──────────────────────────
 function updateUI() {
   const bt        = document.getElementById('big-time');
   const pb        = document.getElementById('phase-badge');
@@ -849,9 +932,12 @@ function updateUI() {
   const curName   = document.getElementById('current-name');
   const pips      = document.getElementById('sets-pips');
   const timerPanel= document.getElementById('timer-panel');
-  const action    = getCurrentAction();
+  const action    = routine[actionIdx];
 
-  // 實際訓練秒數更新
+  const remaining = phaseEndTime
+    ? Math.max(0, Math.ceil((phaseEndTime - Date.now()) / 1000))
+    : (action ? action.work : 90);
+
   document.getElementById('elapsed-display').textContent = fmtTime(totalActive);
 
   bt.textContent = fmtTime(remaining);
@@ -863,25 +949,20 @@ function updateUI() {
     timerPanel.style.background = '#071c3a';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'work');
     pb.textContent = '訓練中'; pb.classList.add('work');
-
   } else if (phase === 'REST') {
     timerPanel.style.background = '#1f1200';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'rest');
     pb.textContent = '休息中'; pb.classList.add('rest');
     fill.classList.add('rest');
-
   } else if (phase === 'TRANSITION') {
     timerPanel.style.background = '#0a1f12';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'trans');
     pb.textContent = '換動作'; pb.classList.add('trans');
     fill.classList.add('trans');
-
   } else if (phase === 'PAUSED') {
     timerPanel.style.background = '#16161e';
     pb.textContent = '暫停中';
-
   } else {
-    // IDLE
     timerPanel.style.background = '#1c2030';
     pb.textContent = '準備';
     bt.textContent = action ? fmtTime(action.work) : '01:30';
@@ -890,15 +971,13 @@ function updateUI() {
   const pct = phaseTotal > 0 ? Math.round((1 - remaining / phaseTotal) * 100) : 0;
   fill.style.width = pct + '%';
 
-  // 動作名稱（TRANSITION 時顯示下一個動作）
   if (phase === 'TRANSITION') {
-    const nextAction = routine[actionIdx]; // actionIdx 已更新到下一個
+    const nextAction = routine[actionIdx];
     curName.textContent = nextAction ? '準備：' + nextAction.label : '換動作中';
   } else {
     curName.textContent = action ? action.label : (isRunning ? '全部完成！' : '尚未開始');
   }
 
-  // 側邊標示（單邊）
   if (action && action.type === 'unilateral' && isRunning && phase === 'WORK') {
     sideBadge.style.opacity = '1';
     sideBadge.textContent = currentSide === 'L' ? '左側' : '右側';
@@ -906,7 +985,6 @@ function updateUI() {
     sideBadge.style.opacity = '0';
   }
 
-  // 組數進度 pips（TRANSITION 時顯示下一動作的組數預覽）
   const pipAction = (phase === 'TRANSITION') ? routine[actionIdx] : action;
   if (pipAction && phase !== 'TRANSITION') {
     pips.innerHTML = Array.from({length: pipAction.sets}, (_, i) => {
@@ -924,6 +1002,7 @@ function updateUI() {
   }
 
   renderProgressDots();
+  lastDisplayedRemaining = -1; // force next updateUI_remaining to redraw
 }
 
 function updateBtns() {
@@ -938,11 +1017,9 @@ function updateBtns() {
 
 function showSummary(complete) {
   document.getElementById('summary-title').textContent = complete ? '🎉 訓練完成！' : '訓練結算';
-  // 壁鐘總時長
   if (wallclockStart) {
     const end  = wallclockEnd || Date.now();
-    const diff = Math.floor((end - wallclockStart) / 1000);
-    document.getElementById('sum-wallclock').textContent = fmtTime(diff);
+    document.getElementById('sum-wallclock').textContent = fmtTime(Math.floor((end - wallclockStart) / 1000));
   } else {
     document.getElementById('sum-wallclock').textContent = '—';
   }
@@ -956,69 +1033,19 @@ function showSummary(complete) {
   document.getElementById('summary').classList.add('show');
 }
 
-// ─── HELPERS ────────────────────────────────────────────
+// ─── HELPERS ─────────────────────────────────────────────
 function fmtTime(s) {
-  const m = Math.floor(Math.abs(s) / 60), sec = Math.abs(s) % 60;
+  s = Math.max(0, Math.round(s));
+  const m = Math.floor(s / 60), sec = s % 60;
   return (m < 10 ? '0' + m : m) + ':' + (sec < 10 ? '0' + sec : sec);
 }
 function fmtSec(s) {
   return s >= 60 ? Math.floor(s/60) + '分' + (s % 60 ? s % 60 + '秒' : '') : s + '秒';
 }
 
-// ─── INIT ───────────────────────────────────────────────
+// ─── INIT ────────────────────────────────────────────────
 updateUI();
 updateBtns();
-
-// ─── SCREEN WAKE LOCK (防手機休眠邏輯) ───────────────────
-let wakeLock = null;
-
-// 申請「鎖定螢幕」，不讓手機睡覺
-async function requestWakeLock() {
-  // 檢查使用者的手機瀏覽器有沒有支援這個功能
-  if ('wakeLock' in navigator) {
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      console.log('💪 螢幕防休眠已啟動！');
-    } catch (err) {
-      console.log('防休眠啟動失敗:', err.message);
-    }
-  }
-}
-
-// 釋放鎖定，讓手機恢復可以正常省電睡眠
-function releaseWakeLock() {
-  if (wakeLock !== null) {
-    try {
-      wakeLock.release().then(() => {
-        wakeLock = null;
-        console.log('💤 螢幕已恢復正常休眠機制');
-      });
-    } catch (err) {
-      console.log('釋放防休眠失敗:', err.message);
-    }
-  }
-}
-
-// 處理頁面可見性變化
-document.addEventListener('visibilitychange', async () => {
-  const isVisible = !document.hidden;
-  
-  if (isVisible) {
-    // 頁面回到前景
-    console.log('📱 頁面回到前景');
-    if (isRunning && !isPaused) {
-      // 計時器正在運行：重新請求鎖定並同步時間
-      await requestWakeLock();
-      // 立即同步一次，確保顯示正確
-      lastSyncTime = Date.now();
-      startBackgroundSync();
-    }
-  } else {
-    // 頁面進入背景，保持背景同步運行以支持時間補償
-    console.log('📳 頁面進入背景');
-  }
-});
- 
 </script>
 </body>
 </html>
