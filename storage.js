@@ -25,17 +25,9 @@ function showSummary(complete) {
     ? sessionLog.map(l => `<div>${escHtml(l)}</div>`).join('')
     : '<div>尚無完成紀錄</div>';
 
-  // 更新「傳送到備忘錄」連結的 href
-  updateNotesLink();
-
   document.getElementById('summary').classList.add('show');
 }
 
-// ─── Apple 備忘錄匯出 ────────────────────────────
-// 原理：Apple 備忘錄支援一個叫做「x-callback-url」的 URL scheme
-// 格式是：  mobilenotes://compose?body=文字內容
-// 在 iPhone 上點擊這個連結，iOS 會自動打開「備忘錄」app 並建立一則新備忘錄
-// 文字內容需要先用 encodeURIComponent() 把特殊字元（換行、中文等）編碼
 function buildNotesText() {
   // 取得今天的日期，格式：2025/05/29
   const today = new Date();
@@ -93,16 +85,36 @@ function buildNotesText() {
   return lines.join('\n');
 }
 
-function updateNotesLink() {
-  const link = document.getElementById('notes-link');
-  if (!link) return;
-
+function copyToClipboard() {
   const text = buildNotesText();
+  const btn = document.getElementById('copy-btn');
 
-  // mobilenotes:// 是 Apple 備忘錄的 URL scheme
-  // 只有 iPhone/iPad 的 Safari 才能打開，電腦上會沒有反應
-  // encodeURIComponent 把換行(\n)和中文都轉成 URL 可以傳遞的格式
-  link.href = 'mobilenotes://compose?body=' + encodeURIComponent(text);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✅ 已複製！去備忘錄貼上';
+      setTimeout(() => { btn.innerHTML = '📋 複製訓練紀錄'; }, 3000);
+    }).catch(() => fallbackCopy(text, btn));
+  } else {
+    fallbackCopy(text, btn);
+  }
+}
+
+function fallbackCopy(text, btn) {
+  // 舊版瀏覽器或 Safari 的備用方法
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try {
+    document.execCommand('copy');
+    btn.textContent = '✅ 已複製！去備忘錄貼上';
+    setTimeout(() => { btn.innerHTML = '📋 複製訓練紀錄'; }, 3000);
+  } catch(e) {
+    btn.textContent = '❌ 複製失敗，請手動選取';
+  }
+  document.body.removeChild(ta);
 }
 
 // 分頁切換（tab bar 用）
