@@ -57,7 +57,7 @@ body {
   display: flex; gap: 0;
 }
 .tab-btn {
-  flex: 1; padding: 10px;
+  flex: 1; padding: 12px; /* 稍微加大提升點擊感 */
   background: var(--surface);
   border: 0.5px solid var(--border);
   color: var(--muted);
@@ -107,27 +107,41 @@ body {
   border-radius: 16px; overflow: hidden;
 }
 .panel-head {
-  padding: 14px 18px;
+  padding: 16px 18px; /* 加大間距，視覺更寬敞 */
   border-bottom: 0.5px solid var(--border);
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px; font-weight: 600;
+  font-size: 14px; /* 放大字體 */
+  font-weight: 600;
   letter-spacing: 2px; text-transform: uppercase;
   color: var(--muted);
   display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px; /* 支援新加入的預估時間標籤自動換行防擠壓 */
+}
+
+/* 新增：預估總訓練時間標籤樣式 */
+.estimated-time-tag {
+  font-size: 13px;
+  color: var(--warn);
+  background: rgba(251, 191, 36, 0.1);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 0.5px solid rgba(251, 191, 36, 0.2);
+  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
 }
 
 /* 新增動作按鈕列 */
 .add-btns {
-  display: flex; gap: 6px;
+  display: flex; gap: 8px; /* 加大間距 */
   padding: 12px 14px;
   border-bottom: 0.5px solid var(--border);
 }
 .add-btn {
-  flex: 1; padding: 10px 6px; border-radius: 8px;
+  flex: 1; padding: 12px 6px; border-radius: 8px; /* 加高按鈕 */
   border: 0.5px solid var(--border2);
   background: var(--surface2); color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 13px; cursor: pointer; transition: all 0.15s; text-align: center;
+  font-size: 14px; /* 放大字體至 14px，符合手機端易讀性 */
+  cursor: pointer; transition: all 0.15s; text-align: center;
 }
 .add-btn:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
 .add-btn.bilateral  { border-left: 2px solid var(--work); }
@@ -136,7 +150,7 @@ body {
 
 /* 課表清單滾動區 */
 .routine-list {
-  min-height: 120px; max-height: 360px;
+  min-height: 120px; max-height: 380px;
   overflow-y: auto; padding: 6px;
 }
 .routine-list::-webkit-scrollbar { width: 4px; }
@@ -145,10 +159,11 @@ body {
 
 /* 每一個課表動作項目 */
 .routine-item {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 10px; border-radius: 10px; margin-bottom: 6px;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px; border-radius: 10px; margin-bottom: 8px;
   border: 0.5px solid transparent; transition: all 0.15s;
   flex-direction: column;  /* 直向排列：上排資訊 + 下排輸入欄 */
+  width: 100%; /* 強制滿版，阻斷水平溢出 */
 }
 .routine-item:hover { background: var(--surface2); border-color: var(--border); }
 .routine-item.active { background: var(--surface2); border-color: var(--border2); }
@@ -159,19 +174,19 @@ body {
   display: flex; align-items: center; gap: 8px; width: 100%;
 }
 
-.item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+.item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .item-dot.bilateral  { background: var(--work); }
 .item-dot.unilateral { background: var(--accent); }
 .item-dot.warmup     { background: var(--warn); }
 
-.item-label { flex: 1; font-size: 13px; line-height: 1.4; }
+.item-label { flex: 1; font-size: 15px; line-height: 1.4; } /* 放大名稱字體 */
 .item-name  { color: var(--text); font-weight: 500; }
-.item-meta  { color: var(--muted); font-size: 11px; }
+.item-meta  { color: var(--muted); font-size: 12px; } /* 放大次要資訊字體 */
 
 .item-del {
-  width: 24px; height: 24px; border-radius: 4px;
+  width: 32px; height: 32px; border-radius: 6px; /* 放大點擊面積 */
   border: none; background: transparent;
-  color: var(--muted); font-size: 15px; cursor: pointer;
+  color: var(--muted); font-size: 18px; cursor: pointer;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 @media (min-width: 620px) {
@@ -180,35 +195,34 @@ body {
 }
 .item-del:hover { color: var(--danger); }
 
-/* ─── 動作備註欄（新增功能）────────────────────
-   讓使用者記錄動作名稱與重量 */
+/* ─── 動作備註欄 ──────────────────────────────  */
 .item-inputs {
-  display: flex; gap: 6px; width: 100%;
-  padding-left: 16px; /* 對齊色點後面 */
+  display: flex; gap: 8px; width: 100%;
+  padding-left: 0; /* 移除固定左內距，改由 100% 滿版彈性分配防止破版 */
 }
 .item-input {
-  flex: 1; padding: 6px 10px;
+  flex: 1; padding: 10px 12px; /* 加大輸入框點擊範圍與內襯 */
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border2);
   border-radius: 6px;
   color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px;
+  font-size: 14px; /* 行動端點擊輸入框時防止 iOS 自動放大畫面的臨界大小 */
   outline: none;
   transition: border-color 0.15s;
-  min-width: 0; /* 防止 flex 溢出 */
+  min-width: 0; /* 防止 flex 子元素溢出 */
 }
 .item-input::placeholder { color: var(--muted); }
 .item-input:focus { border-color: rgba(61,139,255,0.5); background: rgba(61,139,255,0.05); }
 .item-input.weight {
-  flex: 0 0 80px; /* 重量欄寬度固定 */
+  flex: 0 0 35%; /* 將重量欄改為固定的百分比比例，完美適應各種小螢幕 */
   text-align: right;
 }
 
 /* 空清單提示 */
 .routine-empty {
   text-align: center; padding: 32px 16px;
-  color: var(--muted); font-size: 13px; line-height: 1.7;
+  color: var(--muted); font-size: 14px; line-height: 1.7;
 }
 
 /* ═══════════════════════════════════════════════
@@ -234,9 +248,9 @@ body {
   letter-spacing: 1px; text-transform: uppercase;
   font-family: 'Barlow Condensed', sans-serif;
 }
-.current-name { font-size: 15px; font-weight: 500; color: var(--text); margin-top: 3px; }
+.current-name { font-size: 16px; font-weight: 500; color: var(--text); margin-top: 3px; }
 
-/* 動作進度點（幾個動作完成了幾個）*/
+/* 動作進度點 */
 .progress-dots {
   display: flex; gap: 5px; align-items: center;
   flex-wrap: wrap; justify-content: flex-end; max-width: 120px;
@@ -256,7 +270,7 @@ body {
 }
 .phase-badge {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 13px; font-weight: 600;
+  font-size: 14px; font-weight: 600;
   letter-spacing: 3px; text-transform: uppercase;
   color: var(--muted); margin-bottom: 8px; height: 18px;
   transition: color 0.3s;
@@ -277,7 +291,7 @@ body {
 .big-time.trans     { color: var(--trans); }
 .big-time.countdown { color: var(--warn); }
 
-/* 組數進度條（小長方形）*/
+/* 組數進度條 */
 .sets-row {
   display: flex; gap: 8px; margin-top: 14px;
   align-items: center; flex-wrap: wrap;
@@ -297,7 +311,7 @@ body {
   color: var(--muted); margin-top: 8px; text-align: center;
 }
 
-/* 左側/右側標示（單邊動作用）*/
+/* 左側/右側標示 */
 .side-badge {
   display: inline-block; padding: 4px 16px; border-radius: 20px;
   font-size: 13px; font-weight: 600; letter-spacing: 1.5px;
@@ -338,17 +352,17 @@ body {
 .controls {
   padding: 12px 14px 14px;
   display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 7px; border-top: 0.5px solid var(--border);
+  gap: 8px; border-top: 0.5px solid var(--border); /* 稍微加大 gap */
 }
 .ctrl-btn {
-  padding: 11px 4px; border-radius: 10px;
+  padding: 14px 4px; border-radius: 10px; /* 加高按鈕，流汗時更好按 */
   border: 0.5px solid var(--border2);
   background: var(--surface2); color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 12px; cursor: pointer; transition: all 0.15s;
+  font-size: 13px; cursor: pointer; transition: all 0.15s;
   display: flex; flex-direction: column; align-items: center; gap: 5px;
 }
-.ctrl-btn .icon { font-size: 18px; }
+.ctrl-btn .icon { font-size: 20px; } /* 放大圖示 */
 .ctrl-btn:hover  { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
 .ctrl-btn:active { transform: scale(0.97); }
 .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -372,13 +386,13 @@ body {
 
 .summary-title {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 22px; font-weight: 700;
+  font-size: 24px; font-weight: 700;
   letter-spacing: 3px; text-transform: uppercase;
   color: var(--success); margin-bottom: 18px;
 }
 .summary-grid {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: 10px; width: 100%; margin-bottom: 18px;
+  gap: 12px; width: 100%; margin-bottom: 18px;
 }
 .summary-card {
   background: var(--surface2);
@@ -387,15 +401,15 @@ body {
 }
 .summary-val {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 30px; font-weight: 700; color: var(--text);
+  font-size: 32px; font-weight: 700; color: var(--text);
 }
 .summary-lbl {
-  font-size: 11px; color: var(--muted);
+  font-size: 12px; color: var(--muted);
   margin-top: 4px; letter-spacing: 1px; text-transform: uppercase;
 }
 .summary-log {
-  width: 100%; max-height: 120px; overflow-y: auto;
-  font-size: 12px; color: var(--muted);
+  width: 100%; max-height: 140px; overflow-y: auto;
+  font-size: 13px; color: var(--muted);
   line-height: 1.8; text-align: left; padding: 0 4px;
 }
 
@@ -404,7 +418,7 @@ body {
   display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; justify-content: center;
 }
 .restart-btn, .notes-btn {
-  padding: 11px 24px; border-radius: 10px;
+  padding: 12px 24px; border-radius: 10px;
   border: 0.5px solid var(--border2);
   background: var(--surface2); color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
@@ -412,6 +426,5 @@ body {
   text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
 }
 .restart-btn:hover, .notes-btn:hover { background: rgba(255,255,255,0.07); }
-/* 備忘錄按鈕用綠色強調 */
 .notes-btn { border-color: rgba(34,197,94,0.4); color: var(--trans); }
 .notes-btn:hover { background: rgba(34,197,94,0.08); }
