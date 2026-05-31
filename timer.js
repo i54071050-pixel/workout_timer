@@ -287,6 +287,7 @@ function handleStart() {
   }
 }
 
+
 function handlePause() {
   if (!isRunning) return;
   pausedAt = Date.now();
@@ -300,7 +301,6 @@ function handlePause() {
   clearTimer();
   clearInterval(wallclockTimer); wallclockTimer = null;
   releaseWakeLock();
-  phase = 'PAUSED';
   updateUI(); updateBtns();
 }
 
@@ -502,7 +502,10 @@ function updateUI() {
   pb.className   = 'phase-badge';
   fill.className = 'progress-bar-fill';
 
-  if (phase === 'WORK') {
+  if (isPaused) {
+    timerPanel.style.background = '#16161e';
+    pb.textContent = '暫停中';
+  } else if (phase === 'WORK') {
     timerPanel.style.background = '#071c3a';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'work');
     pb.textContent = '訓練中'; pb.classList.add('work');
@@ -516,9 +519,6 @@ function updateUI() {
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'trans');
     pb.textContent = '換動作'; pb.classList.add('trans');
     fill.classList.add('trans');
-  } else if (phase === 'PAUSED') {
-    timerPanel.style.background = '#16161e';
-    pb.textContent = '暫停中';
   } else {
     timerPanel.style.background = '#1c2030';
     pb.textContent = '準備';
@@ -564,7 +564,7 @@ function updateBtns() {
   const a = isRunning, p = isPaused;
   document.getElementById('btn-start').disabled = a && !p;
   document.getElementById('btn-pause').disabled = !a;
-  document.getElementById('btn-early').disabled = !a;
+  document.getElementById('btn-early').disabled = !a|| p;
   document.getElementById('btn-stop').disabled  = !a && !p;
   document.getElementById('btn-start').children[1].textContent = p ? '繼續' : '開始';
   document.getElementById('btn-start').children[0].textContent = '▶';
