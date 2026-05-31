@@ -297,11 +297,7 @@ function handlePause() {
   if (!isRunning) return;
   pausedAt = Date.now();
   // 暫停時先把當前的 WORK 累計秒數存好
-  if (phase === 'WORK') {
-    const remaining = Math.max(0, Math.ceil((phaseEndTime - pausedAt) / 1000));
-    totalActive = totalActiveBase + (phaseTotal - remaining);
-    totalActiveBase = totalActive;
-  }
+  
   isPaused = true; isRunning = false;
   clearTimer();
   clearInterval(wallclockTimer); wallclockTimer = null;
@@ -312,7 +308,11 @@ function handlePause() {
 function handleEarly() {
   if (!isRunning) return;
   clearTimer();
-  phaseEndTime = Date.now();  // 把終止時間點設成「現在」，等於立刻過期
+  const now = Date.now();  
+   const remaining = Math.max(0, Math.ceil((phaseEndTime - now) / 1000));
+   const actualElapsed = Math.max(0, phaseTotal - remaining); 
+   phaseTotal = actualElapsed;
+   phaseEndTime = now
   onPhaseEnd();
 }
 
