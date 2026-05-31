@@ -340,9 +340,8 @@ function resetAll() {
 let itemCounter = 0;
 
 function addItem(type) {
-  const m = MODES[type];
-  // note 和 weight 是新增欄位，初始為空字串
-  routine.push({ id:++itemCounter, type, label:m.label, work:m.work, rest:m.rest, sets:m.sets, note:'', weight:'' });
+  // 精簡資料結構：只記錄必要的唯一 id、型態、以及使用者輸入的備註與重量
+  routine.push({ id: ++itemCounter, type, note: '', weight: '' });
   renderList();
 }
 
@@ -355,7 +354,6 @@ function removeItem(id) {
 function updateItemField(id, field, value) {
   const item = routine.find(r => r.id === id);
   if (item) item[field] = value;
-  // 不需要重新渲染整個列表（會造成輸入欄焦點跑掉），只更新資料
 }
 
 function renderList() {
@@ -364,40 +362,47 @@ function renderList() {
 
   if (!routine.length) {
     el.innerHTML = '<div class="routine-empty">按上方按鈕<br>加入訓練動作</div>';
+    updateEstimatedTime(); 
     return;
   }
 
-  el.innerHTML = routine.map((item, i) => `
-    <div class="routine-item ${i===actionIdx&&isRunning?'active':''} ${i<actionIdx&&isRunning?'done':''}">
-      <div class="item-top">
-        <div class="item-dot ${item.type}"></div>
-        <div class="item-label">
-          <div class="item-name">${item.label}</div>
-          <div class="item-meta">${fmtSec(item.work)} · 休${fmtSec(item.rest)} · ${item.sets}組</div>
+  el.innerHTML = routine.map((item, i) => {
+    // 渲染時，動態從全域的 MODES 讀取該型態的設定值
+    const m = MODES[item.type];
+    
+    return `
+      <div class="routine-item ${i===actionIdx&&isRunning?'active':''} ${i<actionIdx&&isRunning?'done':''}">
+        <div class="item-top">
+          <div class="item-dot ${item.type}"></div>
+          <div class="item-label">
+            <div class="item-name">${m.label}</div>
+            <div class="item-meta">${fmtSec(m.work)} · 休${fmtSec(m.rest)} · ${m.sets}組</div>
+          </div>
+          <button class="item-del" onclick="removeItem(${item.id})">✕</button>
         </div>
-        <button class="item-del" onclick="removeItem(${item.id})">✕</button>
+        <div class="item-inputs">
+          <input
+            class="item-input"
+            type="text"
+            placeholder="動作名稱（例：深蹲、臥推）"
+            value="${escHtml(item.note)}"
+            oninput="updateItemField(${item.id}, 'note', this.value)"
+          />
+          <input
+            class="item-input weight"
+            type="number"
+            placeholder="kg"
+            value="${item.weight}"
+            min="0" step="0.5"
+            oninput="updateItemField(${item.id}, 'weight', this.value)"
+          />
+        </div>
       </div>
-      <div class="item-inputs">
-        <input
-          class="item-input"
-          type="text"
-          placeholder="動作名稱（例：深蹲、臥推）"
-          value="${escHtml(item.note)}"
-          oninput="updateItemField(${item.id}, 'note', this.value)"
-        />
-        <input
-          class="item-input weight"
-          type="number"
-          placeholder="kg"
-          value="${item.weight}"
-          min="0" step="0.5"
-          oninput="updateItemField(${item.id}, 'weight', this.value)"
-        />
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   renderProgressDots();
+  updateEstimatedTime(); 
 }
 
 function renderProgressDots() {
@@ -410,6 +415,48 @@ function renderProgressDots() {
   }).join('');
 }
 
+
+// ─── 超精簡：自動讀取組合 ＆ 格式化顯示「X分X秒」 ───
+function updateEstimatedTime() {
+  const estDisplay = document.getElementById('est-time-display');
+  if (!estDisplay) return; 
+
+  if (!routine.length) {
+    estDisplay.innerText = '預估時間: 0分0秒';
+    return;
+  }
+
+  let totalSeconds = 0;
+  const transitionTime = 120; // 換動作休息 2 分鐘 = 120 秒
+
+  routine.forEach((item, index) => {
+    // 關鍵優化：直接讀取主設定 MODES，完全不用怕 item 裡面少帶資料
+    const config = MODES[item.type];
+    if (!config) return;
+
+    const work = parseInt(config.work) || 0;
+    const rest = parseInt(config.rest) || 0;
+    const sets = parseInt(config.sets) || 0;
+
+    if (sets > 0) {
+      // 計算單個動作總長度
+      const actionTime = (work * sets) + (rest * (sets - 1));
+      totalSeconds += actionTime;
+      
+      // 若非最後一個動作，加上換動作的 2 分鐘
+      if (index < routine.length - 1) {
+        totalSeconds += transitionTime;
+      }
+    }
+  });
+
+  // 計算分與秒（不再盲目進位，精準呈現秒數）
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  // 格式化輸出
+  estDisplay.innerText = `預估時間: ${minutes}分${seconds}秒`;
+}
 // ─── UI 更新 ──────────────────────────────────────
 let lastDisplayedRemaining = -1;
 
