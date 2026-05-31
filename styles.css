@@ -163,7 +163,9 @@ body {
   padding: 14px; border-radius: 10px; margin-bottom: 8px;
   border: 0.5px solid transparent; transition: all 0.15s;
   flex-direction: column;  /* 直向排列：上排資訊 + 下排輸入欄 */
-  width: 100%; /* 強制滿版，阻斷水平溢出 */
+  width: 100%;/* 強制滿版，阻斷水平溢出 */
+   min-width: 0;
+   overflow: hidden
 }
 .routine-item:hover { background: var(--surface2); border-color: var(--border); }
 .routine-item.active { background: var(--surface2); border-color: var(--border2); }
@@ -198,7 +200,8 @@ body {
 /* ─── 動作備註欄 ──────────────────────────────  */
 .item-inputs {
   display: flex; gap: 8px; width: 100%;
-  padding-left: 0; /* 移除固定左內距，改由 100% 滿版彈性分配防止破版 */
+  padding-left: 0;
+   overflow: hidden/* 移除固定左內距，改由 100% 滿版彈性分配防止破版 */
 }
 .item-input {
   flex: 1; padding: 10px 12px; /* 加大輸入框點擊範圍與內襯 */
@@ -211,12 +214,17 @@ body {
   outline: none;
   transition: border-color 0.15s;
   min-width: 0; /* 防止 flex 子元素溢出 */
+   max-width: 100%;
+   text-overflow: ellipsis; 
+   overflow:hidden;
+   whitespace: nowrap;
 }
 .item-input::placeholder { color: var(--muted); }
 .item-input:focus { border-color: rgba(61,139,255,0.5); background: rgba(61,139,255,0.05); }
 .item-input.weight {
   flex: 0 0 35%; /* 將重量欄改為固定的百分比比例，完美適應各種小螢幕 */
   text-align: right;
+   max-width: 35%; 
 }
 
 /* 空清單提示 */
