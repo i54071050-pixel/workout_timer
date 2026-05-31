@@ -125,21 +125,23 @@ function clearTimer() {
 // 這樣手機睡著後醒來，只要做一次減法就能得到正確的剩餘秒數
 function startPhase(p) {
   const action = routine[actionIdx];
+  if (!action) return; // 安全防護
+  
+  // 【核心修正】從全域 MODES 取得該動作型態的秒數設定
+  const m = MODES[action.type]; 
   phase = p;
-
+  
   let durationSec;
-  if (p === 'WORK')            durationSec = action.work;
-  else if (p === 'REST')       durationSec = action.rest;
+  if (p === 'WORK')            durationSec = m.work;       // 修正：從 m 讀取
+  else if (p === 'REST')       durationSec = m.rest;       // 修正：從 m 讀取
   else if (p === 'TRANSITION') durationSec = TRANSITION_SEC;
-
+  
   phaseTotal   = durationSec;
   phaseEndTime = Date.now() + durationSec * 1000;  // 絕對終止時間
-
   updateUI();
   clearTimer();
   timerId = setInterval(tick, 500);  // 每 0.5 秒查看一次真實時鐘
 }
-
 // 每 0.5 秒執行一次
 // 不做加減法，直接用「終止時間 - 現在」算出剩餘秒數
 function tick() {
@@ -181,6 +183,8 @@ function rescheduleAfterWake() {
 // 每次一個階段結束，這裡決定下一步
 function onPhaseEnd() {
   const action = routine[actionIdx];
+  if (!action) return;
+  const m = MODES[action.type]; // 【核心修正】取得當前動作的設定檔
 
   // WORK 結束 → 休息
   if (phase === 'WORK') {
@@ -195,8 +199,7 @@ function onPhaseEnd() {
   if (phase === 'REST') {
     completedSets++;
     setIdx++;
-
-    if (setIdx < action.sets) {
+    if (setIdx < m.sets) { // 修正：使用 m.sets 判定
       // 還有下一組：單邊動作切換左右側，繼續 WORK
       if (action.type === 'unilateral') currentSide = currentSide === 'L' ? 'R' : 'L';
       playTimeUp();
@@ -206,17 +209,18 @@ function onPhaseEnd() {
 
     // 這個動作所有組數完成
     completedActions++;
-    // 把這個動作的紀錄（名稱、備註、重量）寫進 sessionLog
+    
+    // 【核心修正】串接結算文字，使用 m.label 與 m.sets 替代原本的 undefined 欄位
     const note   = action.note   || '';
     const weight = action.weight || '';
     const detail = [note, weight ? weight + 'kg' : ''].filter(Boolean).join(' · ');
-    sessionLog.push(`✓ ${action.label}${detail ? '（' + detail + '）' : ''} — ${action.sets}組完成`);
-
+    sessionLog.push(`✓ ${m.label}${detail ? '（' + detail + '）' : ''} — ${m.sets}組完成`);
+    
     actionIdx++;
     setIdx = 0;
     currentSide = 'L';
     renderList();
-
+    
     if (actionIdx < routine.length) {
       // 還有下一個動作：進入換動作緩衝
       playTimeUp();
@@ -268,6 +272,7 @@ function handleStart() {
     timerId = setInterval(tick, 500);
     if (!wallclockTimer) wallclockTimer = setInterval(updateWallclock, 1000);
     requestWakeLock();
+     updateUI();
     updateBtns();
     return;
   }
@@ -489,73 +494,80 @@ function updateUI() {
   const curName    = document.getElementById('current-name');
   const pips       = document.getElementById('sets-pips');
   const timerPanel = document.getElementById('timer-panel');
+  
   const action     = routine[actionIdx];
-
-  const remaining = phaseEndTime
-    ? Math.max(0, Math.ceil((phaseEndTime - Date.now()) / 1000))
-    : (action ? action.work : 90);
-
+  const m          = action ? MODES[action.type] : null; // 【核心修正】動態獲取當前 Mode 設定
+  
+  const remaining = phaseEndTime ? Math.max(0, Math.ceil((phaseEndTime - Date.now()) / 1000)) : (m ? m.work : 90);
+  
   document.getElementById('elapsed-display').textContent = fmtTime(totalActive);
-
   bt.textContent = fmtTime(remaining);
   bt.className   = 'big-time';
   pb.className   = 'phase-badge';
   fill.className = 'progress-bar-fill';
-
+  
   if (isPaused) {
     timerPanel.style.background = '#16161e';
     pb.textContent = '暫停中';
   } else if (phase === 'WORK') {
     timerPanel.style.background = '#071c3a';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'work');
-    pb.textContent = '訓練中'; pb.classList.add('work');
+    pb.textContent = '訓練中';
+    pb.classList.add('work');
   } else if (phase === 'REST') {
     timerPanel.style.background = '#1f1200';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'rest');
-    pb.textContent = '休息中'; pb.classList.add('rest');
+    pb.textContent = '休息中';
+    pb.classList.add('rest');
     fill.classList.add('rest');
   } else if (phase === 'TRANSITION') {
     timerPanel.style.background = '#0a1f12';
     bt.classList.add(remaining <= 3 && remaining > 0 ? 'countdown' : 'trans');
-    pb.textContent = '換動作'; pb.classList.add('trans');
+    pb.textContent = '換動作';
+    pb.classList.add('trans');
     fill.classList.add('trans');
   } else {
     timerPanel.style.background = '#1c2030';
     pb.textContent = '準備';
-    bt.textContent = action ? fmtTime(action.work) : '01:30';
+    bt.textContent = m ? fmtTime(m.work) : '01:30';
   }
-
+  
   const pct = phaseTotal > 0 ? Math.round((1 - remaining / phaseTotal) * 100) : 0;
   fill.style.width = pct + '%';
-
+  
   if (phase === 'TRANSITION') {
     const nextAction = routine[actionIdx];
-    curName.textContent = nextAction ? '準備：' + nextAction.label : '換動作中';
+    const nextM = nextAction ? MODES[nextAction.type] : null;
+    curName.textContent = nextM ? '準備：' + nextM.label : '換動作中';
   } else {
-    curName.textContent = action ? action.label : (isRunning ? '全部完成！' : '尚未開始');
+    curName.textContent = m ? m.label : (isRunning ? '全部完成！' : '尚未開始');
   }
-
+  
   if (action && action.type === 'unilateral' && isRunning && phase === 'WORK') {
     sideBadge.style.opacity = '1';
     sideBadge.textContent = currentSide === 'L' ? '左側' : '右側';
   } else {
     sideBadge.style.opacity = '0';
   }
-
+  
+  // ─── 修正組數小點點與文字顯示 ─────────────────
   const pipAction = (phase === 'TRANSITION') ? routine[actionIdx] : action;
-  if (pipAction && phase !== 'TRANSITION') {
-    pips.innerHTML = Array.from({length: pipAction.sets}, (_, i) => {
+  const pipM = pipAction ? MODES[pipAction.type] : null; // 【核心修正】改撈 Mode 的設定值
+  
+  if (pipM && phase !== 'TRANSITION') {
+    pips.innerHTML = Array.from({length: pipM.sets}, (_, i) => { // 修正：pipM.sets
       const cls = i < setIdx ? 'done' : (i === setIdx ? (phase === 'REST' ? 'rest-active' : 'active') : '');
       return `<div class="set-pip ${cls}"></div>`;
     }).join('');
-    setsText.textContent = `第 ${setIdx + 1} / ${pipAction.sets} 組`;
-  } else if (phase === 'TRANSITION' && pipAction) {
-    pips.innerHTML = Array.from({length: pipAction.sets}, () => `<div class="set-pip"></div>`).join('');
-    setsText.textContent = `共 ${pipAction.sets} 組`;
+    setsText.textContent = `第 ${setIdx + 1} / ${pipM.sets} 組`; // 修正：pipM.sets
+  } else if (phase === 'TRANSITION' && pipM) {
+    pips.innerHTML = Array.from({length: pipM.sets}, () => `<div class="set-pip"></div>`).join('');
+    setsText.textContent = `共 ${pipM.sets} 組`;
   } else {
-    pips.innerHTML = ''; setsText.textContent = '—';
+    pips.innerHTML = '';
+    setsText.textContent = '—';
   }
-
+  
   renderProgressDots();
   lastDisplayedRemaining = -1;
 }
