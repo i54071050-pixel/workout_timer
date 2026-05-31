@@ -119,14 +119,9 @@
         <!-- 按鈕群 -->
         <div class="summary-actions">
           <button class="restart-btn" onclick="resetAll()">重新開始</button>
-          <!--
-            備忘錄按鈕：href 由 storage.js 的 updateNotesLink() 動態填入
-            mobilenotes:// 是 iPhone 備忘錄 app 的 URL scheme
-            點擊後 iOS 會開啟備忘錄並建立一則新筆記
-            電腦上點擊不會有反應（macOS 版備忘錄需要不同的 scheme）
-          -->
-          <a id="notes-link" class="notes-btn" href="#">
-            📝 傳送到備忘錄
+          
+          <button class="notes-btn" onclick="copyToClipboard()" id="copy-btn">
+            📝 傳送到備忘錄 </button>
           </a>
         </div>
       </div>
