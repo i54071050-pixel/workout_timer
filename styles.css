@@ -52,7 +52,7 @@ body {
 
 /* ─── 分頁列（手機版）───────────────────────── */
 .tab-bar {
-  width: 100%; max-width: 800px;
+  width: 100%; max-width: 600px;
   padding: 14px 20px 0;
   display: flex; gap: 0;
 }
@@ -70,7 +70,7 @@ body {
 
 /* ─── 雙欄版面 ──────────────────────────────── */
 .layout {
-  width: 100%; max-width: 800px;
+  width: 100%; max-width: 600px;
   padding: 16px 20px 40px;
   display: grid; gap: 16px;
 }
