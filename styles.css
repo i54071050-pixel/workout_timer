@@ -131,22 +131,27 @@ body {
 
 /* 新增動作按鈕列 */
 .add-btns {
-  display: flex; gap: 8px; /* 加大間距 */
-  padding: 12px 12px;
+  display: flex;
+  gap: 6px; /* 縮小間距，原本 8px */
+  padding: 10px; /* 縮減上下空間 */
   border-bottom: 0.5px solid var(--border);
 }
+
 .add-btn {
-  flex: 1; padding: 12px 6px; border-radius: 8px; /* 加高按鈕 */
+  flex: 1;
+  padding: 8px 4px; /* 減小按鈕高度與左右內距 */
+  border-radius: 6px; /* 配合變小的按鈕，圓角稍微縮小 */
   border: 0.5px solid var(--border2);
-  background: var(--surface2); color: var(--text);
+  background: var(--surface2);
+  color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 14px; /* 放大字體至 14px，符合手機端易讀性 */
-  cursor: pointer; transition: all 0.15s; text-align: center;
+  font-size: 13px; /* 字體縮小，原本 14px */
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  /* 防止文字太長被擠壓到換行 */
+  white-space: nowrap; 
 }
-.add-btn:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
-.add-btn.bilateral  { border-left: 2px solid var(--work); }
-.add-btn.unilateral { border-left: 2px solid var(--accent); }
-.add-btn.warmup     { border-left: 2px solid var(--warn); }
 
 /* 課表清單滾動區 */
 .routine-list {
@@ -159,17 +164,34 @@ body {
 
 /* 每一個課表動作項目 */
 .routine-item {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 14px; border-radius: 10px; margin-bottom: 8px;
-  border: 0.5px solid transparent; transition: all 0.15s;
-  flex-direction: column;  /* 直向排列：上排資訊 + 下排輸入欄 */
-  width: 100%;/* 強制滿版，阻斷水平溢出 */
-   min-width: 0;
-   overflow: hidden
+  display: flex;
+  align-items: flex-start;
+  gap: 8px; /* 縮減上下排的間距 */
+  padding: 12px 10px; /* 縮減左右內距，讓出更多空間給輸入框 */
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 0.5px solid transparent;
+  transition: all 0.15s;
+  flex-direction: column; 
+  width: 100%;
+  box-sizing: border-box; /* 絕對確保 padding 不會撐破 100% 寬度 */
+  overflow: hidden;
 }
-.routine-item:hover { background: var(--surface2); border-color: var(--border); }
-.routine-item.active { background: var(--surface2); border-color: var(--border2); }
-.routine-item.done { opacity: 0.35; }
+
+.item-label {
+  flex: 1;
+  font-size: 14px; /* 縮小動作名稱字體，原本 15px */
+  line-height: 1.4;
+  /* 防止文字過長把版面撐破，變成省略號 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-meta {
+  color: var(--muted);
+  font-size: 11px; /* 縮小次要資訊字體，原本 12px */
+}
 
 /* 項目上排：色點 + 名稱 + 刪除 */
 .item-top {
@@ -199,32 +221,37 @@ body {
 
 /* ─── 動作備註欄 ──────────────────────────────  */
 .item-inputs {
-  display: flex; gap: 8px; width: 100%;
-  padding-left: 0;
-   overflow: hidden/* 移除固定左內距，改由 100% 滿版彈性分配防止破版 */
+  display: flex;
+  gap: 6px; /* 縮小輸入框之間的間距 */
+  width: 100%; 
+  padding-left: 0; 
+  box-sizing: border-box;
 }
+
 .item-input {
-  flex: 1; padding: 10px 12px; /* 加大輸入框點擊範圍與內襯 */
+  flex: 1; /* 讓輸入框彈性伸縮 */
+  min-width: 0; /* 【極度重要】打破 input 預設的最小寬度，防止跑版 */
+  width: 100%; /* 配合 min-width: 0 使用 */
+  padding: 8px 10px; /* 縮小輸入框的高度跟內距 */
   background: rgba(255,255,255,0.04);
   border: 0.5px solid var(--border2);
   border-radius: 6px;
   color: var(--text);
   font-family: 'Noto Sans TC', sans-serif;
-  font-size: 14px; /* 行動端點擊輸入框時防止 iOS 自動放大畫面的臨界大小 */
+  font-size: 13px; /* 縮小輸入框字體 */
   outline: none;
   transition: border-color 0.15s;
-  min-width: 0; /* 防止 flex 子元素溢出 */
-   max-width: 100%;
-   text-overflow: ellipsis; 
-   overflow:hidden;
-   whitespace: nowrap;
+  
+  /* 修正原本的錯字 whitespace -> white-space */
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.item-input::placeholder { color: var(--muted); }
-.item-input:focus { border-color: rgba(61,139,255,0.5); background: rgba(61,139,255,0.05); }
+
 .item-input.weight {
-  flex: 0 0 35%; /* 將重量欄改為固定的百分比比例，完美適應各種小螢幕 */
+  flex: 0 0 30%; /* 重量欄稍微縮小到 30%，讓組數跟次數欄位有更多空間 */
+  max-width: 30%;
   text-align: right;
-   max-width: 35%; 
 }
 
 /* 空清單提示 */
