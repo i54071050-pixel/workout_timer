@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gym Timer</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<!-- 字型 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- 樣式（styles.css）：改顏色、字體、版面都在這裡 -->
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!--
+  iPhone 防休眠用的隱藏影片元素
+  這個 <video> 完全看不到（1 像素、透明）
+  但 Safari 看到影片在播放就不會讓螢幕休眠
+  詳見 timer.js 的 buildWakeVideo() 說明
+-->
+<video id="wake-video"
+  style="position:fixed;opacity:0;pointer-events:none;width:1px;height:1px;"
+  playsinline muted loop>
+</video>
+
+<!-- ════════════════════════════════════════
+     頁首
+     ════════════════════════════════════════ -->
+<header class="app-header">
+  <div class="app-title">Gym Timer</div>
+  <div class="app-sub">自訂課表 · by C.Y.L.</div>
+</header>
+
+<!-- ════════════════════════════════════════
+     分頁列（手機版才顯示，電腦版自動隱藏）
+     ════════════════════════════════════════ -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-routine" onclick="switchTab('routine')">📋 課表安排</button>
+  <button class="tab-btn"        id="tab-timer"   onclick="switchTab('timer')">⏱ 計時器</button>
+</div>
+
+<!-- ════════════════════════════════════════
+     主要雙欄版面
+     ════════════════════════════════════════ -->
+<div class="layout">
+
+  <!-- ── 左欄：課表安排 ── -->
+  <div id="page-routine" class="tab-page active">
+    <div class="panel">
+
+      <!-- 面板標題 -->
+      <div class="panel-head">
+        <span>課表安排</span>
+        <span id="routine-count" style="color:var(--muted);font-size:12px">0 個動作</span>
+      </div>
+
+      <!-- 新增按鈕 -->
+      <div class="add-btns">
+        <button class="add-btn warmup"     onclick="addItem('warmup')">🔥 熱身</button>
+        <button class="add-btn unilateral" onclick="addItem('unilateral')">⚡ 單邊</button>
+        <button class="add-btn bilateral"  onclick="addItem('bilateral')">🏋️ 雙邊</button>
+      </div>
+
+      <!--
+        課表清單
+        每個項目由 timer.js 的 renderList() 動態產生
+        每個項目有：
+          上排：色點 + 動作類型 + 刪除按鈕
+          下排：動作名稱輸入欄 + 重量輸入欄（新增功能）
+      -->
+      <div class="routine-list" id="routine-list">
+        <div class="routine-empty">按上方按鈕<br>加入訓練動作</div>
+      </div>
+
+    </div>
+
+    <!-- 手機版：跳到計時器的按鈕 -->
+    <button class="go-btn" onclick="goToTimer()">前往計時器 →</button>
+  </div>
+
+
+  <!-- ── 右欄：計時器 ── -->
+  <div id="page-timer" class="tab-page">
+    <div class="timer-panel" id="timer-panel">
+
+      <!-- ── 結算畫面（覆蓋在計時器上方）── -->
+      <div class="summary-overlay" id="summary">
+        <div class="summary-title" id="summary-title">訓練結算</div>
+
+        <!-- 四格數據卡片 -->
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-val" id="sum-wallclock">—</div>
+            <div class="summary-lbl">總訓練時長</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-val" id="sum-active">0:00</div>
+            <div class="summary-lbl">實際訓練秒</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-val" id="sum-sets">0</div>
+            <div class="summary-lbl">完成組數</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-val" id="sum-actions">0</div>
+            <div class="summary-lbl">完成動作</div>
+          </div>
+        </div>
+
+        <!-- 動作完成紀錄文字列表 -->
+        <div class="summary-log" id="summary-log"></div>
+
+        <!-- 按鈕群 -->
+        <div class="summary-actions">
+          <button class="restart-btn" onclick="resetAll()">重新開始</button>
+          <!--
+            備忘錄按鈕：href 由 storage.js 的 updateNotesLink() 動態填入
+            mobilenotes:// 是 iPhone 備忘錄 app 的 URL scheme
+            點擊後 iOS 會開啟備忘錄並建立一則新筆記
+            電腦上點擊不會有反應（macOS 版備忘錄需要不同的 scheme）
+          -->
+          <a id="notes-link" class="notes-btn" href="#">
+            📝 傳送到備忘錄
+          </a>
+        </div>
+      </div>
+      <!-- ── 結算畫面結束 ── -->
+
+
+      <!-- 目前動作名稱 + 動作進度點 -->
+      <div class="timer-info">
+        <div>
+          <div class="current-label">目前動作</div>
+          <div class="current-name" id="current-name">尚未開始</div>
+        </div>
+        <div class="progress-dots" id="progress-dots"></div>
+      </div>
+
+      <!-- 總訓練壁鐘時長（按開始到現在）-->
+      <div class="wallclock-bar">
+        <span class="wallclock-lbl">總訓練時長</span>
+        <span class="wallclock-val" id="wallclock-display">—</span>
+      </div>
+
+      <!-- 實際訓練累計秒數（只算 WORK 階段）-->
+      <div class="elapsed-bar">
+        <span class="elapsed-lbl">實際訓練秒</span>
+        <span class="elapsed-val" id="elapsed-display">00:00</span>
+      </div>
+
+      <!-- 大倒數數字 -->
+      <div class="clock-area">
+        <div class="phase-badge" id="phase-badge">準備</div>
+        <div class="big-time"    id="big-time">01:30</div>
+        <div class="side-badge"  id="side-badge" style="opacity:0">—</div>
+        <div class="sets-row"    id="sets-pips"></div>
+        <div class="sets-text"   id="sets-text">—</div>
+      </div>
+
+      <!-- 階段進度條（細線）-->
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="prog-fill"></div>
+        </div>
+      </div>
+
+      <!-- 四個控制按鈕 -->
+      <div class="controls">
+        <button class="ctrl-btn start"  id="btn-start" onclick="handleStart()">
+          <span class="icon">▶</span><span>開始</span>
+        </button>
+        <button class="ctrl-btn"        id="btn-pause" onclick="handlePause()" disabled>
+          <span class="icon">⏸</span><span>暫停</span>
+        </button>
+        <button class="ctrl-btn early"  id="btn-early" onclick="handleEarly()" disabled>
+          <span class="icon">⏭</span><span>提早完成</span>
+        </button>
+        <button class="ctrl-btn danger" id="btn-stop"  onclick="handleStop()"  disabled>
+          <span class="icon">■</span><span>停止結算</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+  <!-- ── 右欄結束 ── -->
+
+</div>
+<!-- ── 主版面結束 ── -->
+
+
+<!-- ════════════════════════════════════════
+     JavaScript 載入順序很重要：
+     1. timer.js   — 定義所有函式和變數
+     2. storage.js — 使用 timer.js 裡的變數（showSummary 等）
+     注意：兩個 .js 之間有依賴關係，不能顛倒順序
+     ════════════════════════════════════════ -->
+<script src="timer.js"></script>
+<script src="storage.js"></script>
+
+<script>
+  // ── 初始化 ──
+  // 所有函式都從 timer.js 和 storage.js 載入後才執行這裡
+  buildWakeVideo();   // 製作防休眠影片（timer.js）
+  updateUI();         // 畫出初始畫面（timer.js）
+  updateBtns();       // 設定按鈕狀態（timer.js）
+</script>
+
+</body>
+</html>

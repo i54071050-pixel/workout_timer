@@ -1,0 +1,417 @@
+/* ═══════════════════════════════════════════════
+   styles.css — Gym Timer 全部視覺樣式
+   修改這裡：顏色、字型、排版、動畫
+   ═══════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ─── 全域顏色變數 ─────────────────────────────
+   想改顏色就只需要改這裡，整個 app 都會跟著變 */
+:root {
+  --bg:       #0d0f14;
+  --surface:  #1c2030;
+  --surface2: #252a3a;
+  --border:   rgba(255,255,255,0.09);
+  --border2:  rgba(255,255,255,0.18);
+  --text:     #e8eaf0;
+  --muted:    #6b7080;
+  --work:     #3d8bff;   /* 訓練中：藍色 */
+  --rest:     #ff6b35;   /* 休息中：橘色 */
+  --trans:    #22c55e;   /* 換動作：綠色 */
+  --accent:   #a78bfa;   /* 單邊動作：紫色 */
+  --danger:   #f87171;   /* 危險/刪除：紅色 */
+  --success:  #4ade80;   /* 成功/完成：亮綠 */
+  --warn:     #fbbf24;   /* 警示/倒數：黃色 */
+}
+
+/* ─── 基本版面 ──────────────────────────────── */
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: background 0.8s ease;
+}
+
+/* ─── 頁首 ──────────────────────────────────── */
+.app-header {
+  width: 100%; max-width: 800px;
+  padding: 24px 20px 0;
+  display: flex; align-items: baseline; gap: 14px;
+}
+.app-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text);
+}
+.app-sub { font-size: 13px; color: var(--muted); letter-spacing: 0.5px; }
+
+/* ─── 分頁列（手機版）───────────────────────── */
+.tab-bar {
+  width: 100%; max-width: 800px;
+  padding: 14px 20px 0;
+  display: flex; gap: 0;
+}
+.tab-btn {
+  flex: 1; padding: 10px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  color: var(--muted);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px; cursor: pointer; transition: all 0.2s;
+}
+.tab-btn:first-child { border-radius: 10px 0 0 10px; }
+.tab-btn:last-child  { border-radius: 0 10px 10px 0; }
+.tab-btn.active { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+
+/* ─── 雙欄版面 ──────────────────────────────── */
+.layout {
+  width: 100%; max-width: 800px;
+  padding: 16px 20px 40px;
+  display: grid; gap: 16px;
+}
+.tab-page { display: none; width: 100%; }
+.tab-page.active { display: flex; flex-direction: column; gap: 12px; }
+
+/* 電腦版：左右並排；手機版：上下分頁 */
+@media (min-width: 620px) {
+  .tab-bar { display: none; }
+  .layout { grid-template-columns: 300px 1fr; }
+  .tab-page { display: flex !important; flex-direction: column; }
+  .go-btn { display: none !important; }
+}
+
+/* ─── 跳轉按鈕（手機版底部）────────────────── */
+.go-btn {
+  width: 100%; padding: 14px; border-radius: 12px;
+  border: 0.5px solid rgba(61,139,255,0.35);
+  background: rgba(61,139,255,0.08);
+  color: var(--work);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 15px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+}
+.go-btn:hover  { background: rgba(61,139,255,0.14); }
+.go-btn:active { transform: scale(0.98); }
+
+/* ═══════════════════════════════════════════════
+   課表面板 (Routine Panel)
+   ═══════════════════════════════════════════════ */
+.panel {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+}
+.panel-head {
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--border);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--muted);
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* 新增動作按鈕列 */
+.add-btns {
+  display: flex; gap: 6px;
+  padding: 12px 14px;
+  border-bottom: 0.5px solid var(--border);
+}
+.add-btn {
+  flex: 1; padding: 10px 6px; border-radius: 8px;
+  border: 0.5px solid var(--border2);
+  background: var(--surface2); color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 13px; cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.add-btn:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
+.add-btn.bilateral  { border-left: 2px solid var(--work); }
+.add-btn.unilateral { border-left: 2px solid var(--accent); }
+.add-btn.warmup     { border-left: 2px solid var(--warn); }
+
+/* 課表清單滾動區 */
+.routine-list {
+  min-height: 160px; max-height: 420px;
+  overflow-y: auto; padding: 8px;
+}
+.routine-list::-webkit-scrollbar { width: 4px; }
+.routine-list::-webkit-scrollbar-track { background: transparent; }
+.routine-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* 每一個課表動作項目 */
+.routine-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px; border-radius: 10px; margin-bottom: 6px;
+  border: 0.5px solid transparent; transition: all 0.15s;
+  flex-direction: column;  /* 直向排列：上排資訊 + 下排輸入欄 */
+}
+.routine-item:hover { background: var(--surface2); border-color: var(--border); }
+.routine-item.active { background: var(--surface2); border-color: var(--border2); }
+.routine-item.done { opacity: 0.35; }
+
+/* 項目上排：色點 + 名稱 + 刪除 */
+.item-top {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+}
+
+.item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+.item-dot.bilateral  { background: var(--work); }
+.item-dot.unilateral { background: var(--accent); }
+.item-dot.warmup     { background: var(--warn); }
+
+.item-label { flex: 1; font-size: 13px; line-height: 1.4; }
+.item-name  { color: var(--text); font-weight: 500; }
+.item-meta  { color: var(--muted); font-size: 11px; }
+
+.item-del {
+  width: 24px; height: 24px; border-radius: 4px;
+  border: none; background: transparent;
+  color: var(--muted); font-size: 15px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+@media (min-width: 620px) {
+  .item-del { opacity: 0; transition: opacity 0.15s; }
+  .routine-item:hover .item-del { opacity: 1; }
+}
+.item-del:hover { color: var(--danger); }
+
+/* ─── 動作備註欄（新增功能）────────────────────
+   讓使用者記錄動作名稱與重量 */
+.item-inputs {
+  display: flex; gap: 6px; width: 100%;
+  padding-left: 16px; /* 對齊色點後面 */
+}
+.item-input {
+  flex: 1; padding: 6px 10px;
+  background: rgba(255,255,255,0.04);
+  border: 0.5px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0; /* 防止 flex 溢出 */
+}
+.item-input::placeholder { color: var(--muted); }
+.item-input:focus { border-color: rgba(61,139,255,0.5); background: rgba(61,139,255,0.05); }
+.item-input.weight {
+  flex: 0 0 80px; /* 重量欄寬度固定 */
+  text-align: right;
+}
+
+/* 空清單提示 */
+.routine-empty {
+  text-align: center; padding: 32px 16px;
+  color: var(--muted); font-size: 13px; line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════
+   計時器面板 (Timer Panel)
+   ═══════════════════════════════════════════════ */
+.timer-panel {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 16px;
+  display: flex; flex-direction: column;
+  overflow: hidden; position: relative;
+  transition: background 0.8s ease;
+}
+
+/* 頂部：目前動作名稱 + 動作進度點 */
+.timer-info {
+  padding: 14px 18px 12px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.current-label {
+  font-size: 11px; color: var(--muted);
+  letter-spacing: 1px; text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.current-name { font-size: 15px; font-weight: 500; color: var(--text); margin-top: 3px; }
+
+/* 動作進度點（幾個動作完成了幾個）*/
+.progress-dots {
+  display: flex; gap: 5px; align-items: center;
+  flex-wrap: wrap; justify-content: flex-end; max-width: 120px;
+}
+.prog-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border2); transition: background 0.3s;
+}
+.prog-dot.done   { background: var(--success); }
+.prog-dot.active { background: var(--work); }
+
+/* ─── 大時鐘區域 ────────────────────────────── */
+.clock-area {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 20px 20px 14px;
+}
+.phase-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px; height: 18px;
+  transition: color 0.3s;
+}
+.phase-badge.work  { color: var(--work); }
+.phase-badge.rest  { color: var(--rest); }
+.phase-badge.trans { color: var(--trans); }
+
+.big-time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 88px; font-weight: 900;
+  letter-spacing: -2px; line-height: 1;
+  color: var(--text); transition: color 0.3s;
+  min-width: 200px; text-align: center;
+}
+.big-time.work      { color: var(--work); }
+.big-time.rest      { color: var(--rest); }
+.big-time.trans     { color: var(--trans); }
+.big-time.countdown { color: var(--warn); }
+
+/* 組數進度條（小長方形）*/
+.sets-row {
+  display: flex; gap: 8px; margin-top: 14px;
+  align-items: center; flex-wrap: wrap;
+  justify-content: center; max-width: 300px;
+}
+.set-pip {
+  width: 22px; height: 6px; border-radius: 3px;
+  background: var(--border2); transition: background 0.3s;
+}
+.set-pip.done        { background: var(--success); }
+.set-pip.active      { background: var(--work); }
+.set-pip.rest-active { background: var(--rest); }
+
+.sets-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; letter-spacing: 1px;
+  color: var(--muted); margin-top: 8px; text-align: center;
+}
+
+/* 左側/右側標示（單邊動作用）*/
+.side-badge {
+  display: inline-block; padding: 4px 16px; border-radius: 20px;
+  font-size: 13px; font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
+  margin-top: 10px;
+  background: rgba(167,139,250,0.15);
+  color: var(--accent); border: 0.5px solid rgba(167,139,250,0.3);
+  min-height: 26px;
+}
+
+/* ─── 時鐘與累計時間資訊列 ──────────────────── */
+.wallclock-bar, .elapsed-bar {
+  padding: 4px 18px 0;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.wallclock-lbl, .elapsed-lbl { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+.wallclock-val, .elapsed-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px; color: var(--muted); letter-spacing: 1px;
+}
+
+/* ─── 進度條 ────────────────────────────────── */
+.progress-bar-wrap { padding: 0 18px; margin-bottom: 4px; }
+.progress-bar-bg {
+  height: 3px; background: var(--border2);
+  border-radius: 2px; overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--work); width: 0%;
+  transition: width 1s linear, background 0.3s;
+}
+.progress-bar-fill.rest  { background: var(--rest); }
+.progress-bar-fill.trans { background: var(--trans); }
+
+/* ─── 控制按鈕列 ────────────────────────────── */
+.controls {
+  padding: 12px 14px 14px;
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 7px; border-top: 0.5px solid var(--border);
+}
+.ctrl-btn {
+  padding: 11px 4px; border-radius: 10px;
+  border: 0.5px solid var(--border2);
+  background: var(--surface2); color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px; cursor: pointer; transition: all 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+.ctrl-btn .icon { font-size: 18px; }
+.ctrl-btn:hover  { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); }
+.ctrl-btn:active { transform: scale(0.97); }
+.ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ctrl-btn.start  { border-color: rgba(61,139,255,0.4);  color: var(--work); }
+.ctrl-btn.start:hover  { background: rgba(61,139,255,0.12); }
+.ctrl-btn.early  { border-color: rgba(251,191,36,0.4);  color: var(--warn); }
+.ctrl-btn.early:hover  { background: rgba(251,191,36,0.12); }
+.ctrl-btn.danger { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+.ctrl-btn.danger:hover { background: rgba(248,113,113,0.12); }
+
+/* ═══════════════════════════════════════════════
+   結算畫面 (Summary Overlay)
+   ═══════════════════════════════════════════════ */
+.summary-overlay {
+  display: none; position: absolute; inset: 0;
+  background: var(--surface); border-radius: 16px;
+  flex-direction: column; align-items: center; justify-content: center;
+  padding: 24px; z-index: 10; overflow-y: auto;
+}
+.summary-overlay.show { display: flex; }
+
+.summary-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--success); margin-bottom: 18px;
+}
+.summary-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; width: 100%; margin-bottom: 18px;
+}
+.summary-card {
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: 12px; padding: 14px; text-align: center;
+}
+.summary-val {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 30px; font-weight: 700; color: var(--text);
+}
+.summary-lbl {
+  font-size: 11px; color: var(--muted);
+  margin-top: 4px; letter-spacing: 1px; text-transform: uppercase;
+}
+.summary-log {
+  width: 100%; max-height: 120px; overflow-y: auto;
+  font-size: 12px; color: var(--muted);
+  line-height: 1.8; text-align: left; padding: 0 4px;
+}
+
+/* 結算畫面底部按鈕群 */
+.summary-actions {
+  display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; justify-content: center;
+}
+.restart-btn, .notes-btn {
+  padding: 11px 24px; border-radius: 10px;
+  border: 0.5px solid var(--border2);
+  background: var(--surface2); color: var(--text);
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px; cursor: pointer; transition: all 0.15s;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.restart-btn:hover, .notes-btn:hover { background: rgba(255,255,255,0.07); }
+/* 備忘錄按鈕用綠色強調 */
+.notes-btn { border-color: rgba(34,197,94,0.4); color: var(--trans); }
+.notes-btn:hover { background: rgba(34,197,94,0.08); }
